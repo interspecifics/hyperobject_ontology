@@ -4,8 +4,6 @@ import os
 import pygame
 from ffpyplayer.player import MediaPlayer
 import uuid  # Import uuid for generating unique IDs
-import time 
-import random 
 
 # Load metadata
 with open('videos.json', 'r') as f:
@@ -19,10 +17,12 @@ host = '0.0.0.0'
 port = 12345
 
 def play_video(video_path):
-    # ... existing code ...
+    pygame.init()
+    screen = pygame.display.set_mode((640, 480))
+    pygame.display.set_caption('Video Player')
 
-    reverse = False  # Flag to indicate reverse playback
-    frames = []  # Store frames for reverse playback
+    player = MediaPlayer(video_path)
+    clock = pygame.time.Clock()
 
     while True:
         for event in pygame.event.get():
@@ -31,24 +31,11 @@ def play_video(video_path):
                 pygame.quit()
                 return
 
-        # Randomly decide to reverse playback
-        if random.random() < 0.01:  # 1% chance to reverse
-            reverse = not reverse
-
-        if reverse:
-            if frames:
-                img, t = frames.pop()  # Get the last frame for reverse playback
-            else:
-                reverse = False  # Stop reverse if no frames are left
-        else:
-            frame, val = player.get_frame()
-            if val == 'eof':
-                break
-            if frame is not None:
-                img, t = frame
-                frames.append(frame)  # Store frame for potential reverse playback
-
-        if img is not None:
+        frame, val = player.get_frame()
+        if val == 'eof':
+            break
+        if frame is not None:
+            img, t = frame
             img = pygame.image.frombuffer(img.to_bytearray()[0], img.get_size(), "RGB")
             screen.blit(img, (0, 0))
             pygame.display.flip()
