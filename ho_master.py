@@ -2,12 +2,14 @@ import socket
 import json
 import pygame
 import threading
+import random 
+import time 
 
 # Initialize pygame
 pygame.init()
 
 # Set up the display
-screen = pygame.display.set_mode((640, 480)) # 1920x1080
+screen = pygame.display.set_mode((1920, 1080)) # 1920x1080
 
 # Function to play video
 def play_video(video_name):
@@ -17,14 +19,25 @@ def play_video(video_name):
     movie.set_display(movie_screen)
     movie.play()
 
+    reverse = False
     while movie.get_busy():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 movie.stop()
                 pygame.quit()
                 return
+
+        # Randomly decide to reverse playback
+        if random.random() < 0.01:  # 1% chance to reverse
+            reverse = not reverse
+            if reverse:
+                movie.rewind()  # Rewind to start
+                # Implement logic to play frames in reverse order
+                # This is a placeholder as pygame doesn't support reverse playback directly
+
         screen.blit(movie_screen, (0, 0))
         pygame.display.update()
+        time.sleep(0.03)  # Control playback speed
 
 # Function for slave to receive tags
 def slave_receive_tags(slave_id, host='0.0.0.0', port=12345):
