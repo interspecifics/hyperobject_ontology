@@ -3,6 +3,12 @@ import json
 import pygame
 import threading
 
+# TODO
+# add video duration metadata
+# Implement logic to select a new video based on tag relations.
+#Update the play_video function to handle the new video selection.
+
+
 
 # Initialize pygame
 pygame.init()
