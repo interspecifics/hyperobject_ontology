@@ -7,7 +7,7 @@ import threading
 pygame.init()
 
 # Set up the display
-screen = pygame.display.set_mode((640, 480))
+screen = pygame.display.set_mode((640, 480)) # 1920x1080
 
 # Function to play video
 def play_video(video_name):
