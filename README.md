@@ -4,7 +4,7 @@ tools for analyzing, cataloging, and describing video collections through the le
 
 ## Overview
 
-The project consists of several tools that work together to:
+The repository consists of several tools that work together to:
 1. Map and extract metadata from video files in a structured directory
 2. Generate a cartographic diagram of the video collection
 3. Generate descriptions using GPT-4o vision model
@@ -33,6 +33,41 @@ The project consists of several tools that work together to:
   - Using GPT-4o for visual analysis
   - Generating contextual descriptions
   - Saving progress incrementally to annotated_ontology.json
+
+- `ho_master.py`: Manages distributed video playback system (Work in Progress):
+  - Creates a network of synchronized video players
+  - Coordinates video playback across multiple displays
+  - Handles tag-based video selection and distribution
+  - Manages socket connections with slave players
+  - Currently supports up to 3 slave displays
+
+- `ho_slave.py`: Individual video player node (Work in Progress):
+  - Receives video assignments from master node
+  - Handles local video playback using pygame/ffpyplayer
+  - Maintains unique ID for master-slave communication
+  - Reads video metadata from videos.json
+  - Manages display settings and video rendering
+
+### ToDo
+
+~~1. Video Metadata Enhancement:~~ (listo)
+   - Add video duration metadata to the system
+   - Implement duration tracking and synchronization
+
+2. Tag-based Playback Logic:
+   - Develop intelligent video selection based on tag relations
+   - Update play_video function to handle tag-based selection
+   - Implement video transition logic
+
+3. Network Communication:
+   - Improve master-slave synchronization
+   - Add error handling for network disconnections
+   - Implement reconnection logic
+
+4. Display Configuration:
+   - Update display resolution settings (currently 640x480, planned 1920x1080)
+   - Add support for different aspect ratios
+   - Implement multi-display coordination
 
 ### Output Files
 
