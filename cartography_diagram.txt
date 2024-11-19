@@ -7,79 +7,79 @@ Total Collection Statistics:
 
 ❂ DEFORESTACION
 ├── Videos: 36
-├── Duration: 379.44 seconds
-├── Mean Duration: 10.54 seconds
+├── Duration: 379.44 seconds (6.32 minutes)
+├── Duration Min/Mean/Max: (10.54, 10.54, 10.54) seconds
 └── Orientations:
-    ├── vert: 18 videos
-    └── hor: 18 videos
+    ├── vert: 18 videos (3.16 minutes)
+    └── hor: 18 videos (3.16 minutes)
 
-❂ FABRICAS
+✴ FABRICAS
 ├── Videos: 15
-├── Duration: 158.1 seconds
-├── Mean Duration: 10.54 seconds
+├── Duration: 158.1 seconds (2.63 minutes)
+├── Duration Min/Mean/Max: (10.54, 10.54, 10.54) seconds
 └── Orientations:
-    ├── ver: 7 videos
-    └── hor: 8 videos
+    ├── ver: 7 videos (1.23 minutes)
+    └── hor: 8 videos (1.41 minutes)
 
-❅ WASTE POLLUTION
+✴ WASTE POLLUTION
 ├── Videos: 14
-├── Duration: 144.92 seconds
-├── Mean Duration: 10.35 seconds
+├── Duration: 144.92 seconds (2.42 minutes)
+├── Duration Min/Mean/Max: (9.88, 10.35, 10.54) seconds
 └── Orientations:
-    ├── ver: 7 videos
-    └── hor: 7 videos
+    ├── ver: 7 videos (1.21 minutes)
+    └── hor: 7 videos (1.21 minutes)
 
 ❈ WILDFIRE
 ├── Videos: 16
-├── Duration: 136.66 seconds
-├── Mean Duration: 8.54 seconds
+├── Duration: 136.66 seconds (2.28 minutes)
+├── Duration Min/Mean/Max: (5.21, 8.54, 10.54) seconds
 └── Orientations:
-    ├── ver: 8 videos
-    └── hor: 8 videos
+    ├── ver: 8 videos (1.14 minutes)
+    └── hor: 8 videos (1.14 minutes)
 
-❇ DESAROLLO 
+❅ DESAROLLO 
 ├── Videos: 22
-├── Duration: 289.94 seconds
-├── Mean Duration: 13.18 seconds
+├── Duration: 289.94 seconds (4.83 minutes)
+├── Duration Min/Mean/Max: (9.88, 13.18, 20.54) seconds
 └── Orientations:
-    ├── ver: 12 videos
-    └── hor: 10 videos
+    ├── ver: 12 videos (2.73 minutes)
+    └── hor: 10 videos (2.1 minutes)
 
-❈ GANADERIA
+✿ GANADERIA
 ├── Videos: 44
-├── Duration: 463.76 seconds
-├── Mean Duration: 10.54 seconds
+├── Duration: 463.76 seconds (7.73 minutes)
+├── Duration Min/Mean/Max: (10.54, 10.54, 10.54) seconds
 └── Orientations:
-    ├── vert: 22 videos
-    └── hor: 22 videos
+    ├── vert: 22 videos (3.86 minutes)
+    └── hor: 22 videos (3.86 minutes)
 
-❅ HURACAN
+✴ HURACAN
 ├── Videos: 28
-├── Duration: 241.16 seconds
-├── Mean Duration: 8.61 seconds
+├── Duration: 241.16 seconds (4.02 minutes)
+├── Duration Min/Mean/Max: (5.21, 8.61, 15.21) seconds
 └── Orientations:
-    ├── ver: 9 videos
-    └── hor: 19 videos
+    ├── ver: 9 videos (1.31 minutes)
+    └── hor: 19 videos (2.7 minutes)
 
-❅ MACROS-FUERZAS
+✴ MACROS-FUERZAS
 ├── Videos: 10
-├── Duration: 105.4 seconds
-├── Mean Duration: 10.54 seconds
+├── Duration: 105.4 seconds (1.76 minutes)
+├── Duration Min/Mean/Max: (10.54, 10.54, 10.54) seconds
 └── Orientations:
-    └── hor: 10 videos
+    └── hor: 10 videos (1.76 minutes)
 
-❇ MINERIA
+※ MINERIA
 ├── Videos: 26
-├── Duration: 274.04 seconds
-├── Mean Duration: 10.54 seconds
+├── Duration: 274.04 seconds (4.57 minutes)
+├── Duration Min/Mean/Max: (10.54, 10.54, 10.54) seconds
 └── Orientations:
-    ├── vert: 13 videos
-    └── hor: 13 videos
+    ├── vert: 13 videos (2.28 minutes)
+    └── hor: 13 videos (2.28 minutes)
 
-✿ NATURALEZA-ANIMALES
+❇ NATURALEZA-ANIMALES
 ├── Videos: 91
-├── Duration: 911.17 seconds
-├── Mean Duration: 10.01 seconds
+├── Duration: 911.17 seconds (15.19 minutes)
+├── Duration Min/Mean/Max: (5.21, 10.01, 10.54) seconds
 └── Orientations:
-    ├── vert: 45 videos
-    └── hor: 46 videos
+    ├── vert: 45 videos (7.9 minutes)
+    └── hor: 46 videos (7.28 minutes)

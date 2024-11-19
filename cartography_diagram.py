@@ -33,14 +33,31 @@ class OntologyCartographer:
 
     def get_category_stats(self, category_data: Dict) -> Dict:
         """Calculate statistics for a category"""
+        # Calculate total duration for each orientation
+        orientation_durations = {
+            orient: sum(video.get('duration', 0) for video in videos)
+            for orient, videos in category_data['orientations'].items()
+        }
+        
+        # Calculate duration stats (min, mean, max)
+        durations = [video.get('duration', 0) for video in category_data['videos']]
+        duration_stats = (
+            round(min(durations), 2),
+            round(statistics.mean(durations), 2),
+            round(max(durations), 2)
+        ) if durations else (0, 0, 0)
+        
         stats = {
             'total_videos': category_data['count'],
             'total_duration': round(category_data['total_duration'], 2),
-            'mean_duration': round(statistics.mean(
-                video.get('duration', 0) for video in category_data['videos']
-            ), 2),
+            'total_duration_min': round(category_data['total_duration'] / 60, 2),
+            'duration_stats': duration_stats,
             'orientations': {
-                orient: len(videos)
+                orient: {
+                    'count': len(videos),
+                    'duration_sec': round(orientation_durations[orient], 2),
+                    'duration_min': round(orientation_durations[orient] / 60, 2)
+                }
                 for orient, videos in category_data['orientations'].items()
             }
         }
@@ -48,15 +65,19 @@ class OntologyCartographer:
 
     def print_tree(self, output_file='cartography_diagram.txt'):
         """Print the ontology tree with statistics and save to file"""
-        # Build the output string
+        # Add ANSI escape codes for white background with black text
+        HIGHLIGHT = '\033[7m'  # or alternatively: '\033[40;107m' for explicit black text on white background
+        RESET = '\033[0m'
+        
+        # Build the output
         output = []
-        output.append("\n=== HYPEROBJECT VIDEO ONTOLOGY MAP ===\n")
+        output.append(f"\n=== {HIGHLIGHT}HYPEROBJECT VIDEO ONTOLOGY MAP{RESET} ===\n")
         
         # Total collection statistics
         total_videos = sum(cat['count'] for cat in self.categories.values())
         total_duration = sum(cat['total_duration'] for cat in self.categories.values())
         
-        output.append(f"Total Collection Statistics:")
+        output.append(f"{HIGHLIGHT}Total Collection Statistics:{RESET}")
         output.append(f"├── Total Videos: {total_videos}")
         output.append(f"└── Total Duration: {round(total_duration/60, 2)} minutes\n")
         
@@ -64,32 +85,34 @@ class OntologyCartographer:
         for category, data in sorted(self.categories.items()):
             stats = self.get_category_stats(data)
             
-            # Category header
+            # Category header with highlighted text
             import random
             emojis = "❂❈※❅❇✿✴︎"
-            output.append(f"{random.choice(emojis)} {category.upper()}")
+            output.append(f"{random.choice(emojis)} {HIGHLIGHT}{category.upper()}{RESET}")
             
-            # Category statistics
+            # Rest of the category statistics remain the same
             output.append(f"├── Videos: {stats['total_videos']}")
-            output.append(f"├── Duration: {stats['total_duration']} seconds")
-            output.append(f"├── Mean Duration: {stats['mean_duration']} seconds")
+            output.append(f"├── Duration: {stats['total_duration']} seconds ({stats['total_duration_min']} minutes)")
+            output.append(f"├── Duration Min/Mean/Max: {stats['duration_stats']} seconds")
             
-            # Orientation breakdown
             output.append("└── Orientations:")
             orientations = stats['orientations']
-            for i, (orient, count) in enumerate(orientations.items(), 1):
+            for i, (orient, orient_stats) in enumerate(orientations.items(), 1):
                 prefix = '    └──' if i == len(orientations) else '    ├──'
-                output.append(f"{prefix} {orient}: {count} videos")
+                output.append(f"{prefix} {orient}: {orient_stats['count']} videos ({orient_stats['duration_min']} minutes)")
             
-            output.append("")  # Empty line between categories
+            output.append("")
         
-        # Join all lines and print to console
+        # Join all lines
         output_text = '\n'.join(output)
+        
+        # Print to console with ANSI codes
         print(output_text)
         
-        # Save to file
+        # Save to file without ANSI codes (clean version)
+        clean_text = output_text.replace(HIGHLIGHT, '').replace(RESET, '')
         with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(output_text)
+            f.write(clean_text)
 
 def main():
     try:
