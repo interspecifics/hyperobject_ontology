@@ -1,0 +1,4 @@
+openai==1.54.4
+opencv-python==4.10.0.84
+python-dotenv==1.0.1
+tqdm==4.67.0
