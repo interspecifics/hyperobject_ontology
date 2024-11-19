@@ -5,7 +5,7 @@ tools for analyzing, cataloging, and describing video collections through the le
 
 🀨 [cartography diagram](cartography_diagram.txt)
 
-🀦 [ontology map with hyperobject annotations](ontology_map_annotated.json)
+🀦 [ontology map with hyperobject annotations](annotated_ontology.json)
 
 ## Overview
 
