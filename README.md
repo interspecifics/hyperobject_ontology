@@ -3,9 +3,13 @@
 El "hiperobjeto" fue propuesto por el filósofo Timothy Morton para describir ciertos fenómenos o entidades que son masivos, complejos y difíciles de comprender en su totalidad debido a su escala, extensión temporal o espacial. Un hiperobjeto no puede ser percibido o comprendido completamente en un solo instante o lugar, ya que su influencia se extiende más allá de nuestra capacidad de percepción inmediata.
 
 Algunas características clave de los hiperobjetos incluyen:
+
 1.Escala masiva: Los hiperobjetos abarcan vastas dimensiones de tiempo o espacio. No podemos verlos de manera total, ya que no se limitan a un solo lugar o momento.
+
 2.No-localización: Aunque pueden tener efectos visibles en lugares específicos, los hiperobjetos no están confinados a un solo lugar. Su presencia y efectos se distribuyen ampliamente.
+
 3.Persistencia temporal: Los hiperobjetos no tienen un ciclo de vida corto, sino que existen a lo largo de períodos muy largos, mucho más allá de la vida humana. Un ejemplo de esto es el cambio climático, que se despliega en escalas temporales que sobrepasan la percepción humana.
+
 4. Impacto en la percepción humana: Los hiperobjetos desafían nuestras formas de entender el mundo, ya que nuestras capacidades cognitivas y sensoriales están limitadas para abordarlos en su totalidad.
 
 Un ejemplo de hyperobjeto clave es la economía global, o actividad económica. Ver la economía como un hiperobjeto nos permite comprenderla como un sistema masivo, interconectado y persistente, cuyas interacciones y efectos van más allá de nuestra capacidad de percibir o controlar completamente. Esta visión implica reconocer la interdependencia global, el impacto a largo plazo de nuestras acciones económicas, y la necesidad de enfoques más holísticos y sostenibles para comprender y gestionar las dinámicas económicas en un mundo globalizado.
