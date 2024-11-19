@@ -2,6 +2,11 @@
 
 tools for analyzing, cataloging, and describing video collections through the lens of hyperobject ontologies. This project helps organize and understand video documentation of hyperobjects by creating structured ontologies with generative descriptions.
 
+
+🀨 [cartography diagram](cartography_diagram.txt)
+
+🀦 [ontology map with hyperobject annotations](ontology_map_annotated.json)
+
 ## Overview
 
 The repository consists of several tools that work together to:
@@ -91,5 +96,4 @@ The repository consists of several tools that work together to:
 
 1. Clone the repository
 2. Install dependencies:
-
 
