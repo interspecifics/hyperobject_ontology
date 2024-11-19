@@ -1,6 +1,6 @@
 # hyperobject_ontology
 
-A suite of Python tools for analyzing, cataloging, and describing video collections through the lens of hyperobject ontologies. This project helps organize and understand video documentation of hyperobjects by creating structured ontologies with generative descriptions.
+tools for analyzing, cataloging, and describing video collections through the lens of hyperobject ontologies. This project helps organize and understand video documentation of hyperobjects by creating structured ontologies with generative descriptions.
 
 ## Overview
 
