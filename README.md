@@ -76,17 +76,17 @@ The repository consists of several tools that work together to:
 
 ### Output Files
 
-- `ontology_map.json`: Primary database containing:
+- `[ontology_map.json](ontology_map.json)`: Primary database containing:
   - Video metadata (name, path, dimensions, duration)
   - Category classifications
   - Orientation information
 
-- `annotated_ontology.json`: Enhanced database including:
+- `[annotated_ontology.json](annotated_ontology.json)`: Enhanced database including:
   - All metadata from ontology_map.json
   - Generated descriptions ('texto' field)
   - Incremental updates as processing continues
 
-- `cartography_diagram.txt`:  Visualization showing:
+- `[cartography_diagram.txt](cartography_diagram.txt)`:  Visualization showing:
   - Total collection metrics
   - Per-category breakdowns
   - Orientation distributions
