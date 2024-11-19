@@ -51,13 +51,6 @@ venv.bak/
 *.swo
 *~
 
-# Project specific
-ontology_map.json
-annotated_ontology.json
-video_database.json
-cartography_diagram.txt
-ontology_tree.txt
-
 # Video files
 *.mp4
 *.avi
