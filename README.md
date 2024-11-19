@@ -4,11 +4,11 @@ El "hiperobjeto" fue propuesto por el filósofo Timothy Morton para describir ci
 
 Algunas características clave de los hiperobjetos incluyen:
 
-1.Escala masiva: Los hiperobjetos abarcan vastas dimensiones de tiempo o espacio. No podemos verlos de manera total, ya que no se limitan a un solo lugar o momento.
+1. Escala masiva: Los hiperobjetos abarcan vastas dimensiones de tiempo o espacio. No podemos verlos de manera total, ya que no se limitan a un solo lugar o momento.
 
-2.No-localización: Aunque pueden tener efectos visibles en lugares específicos, los hiperobjetos no están confinados a un solo lugar. Su presencia y efectos se distribuyen ampliamente.
+2. No-localización: Aunque pueden tener efectos visibles en lugares específicos, los hiperobjetos no están confinados a un solo lugar. Su presencia y efectos se distribuyen ampliamente.
 
-3.Persistencia temporal: Los hiperobjetos no tienen un ciclo de vida corto, sino que existen a lo largo de períodos muy largos, mucho más allá de la vida humana. Un ejemplo de esto es el cambio climático, que se despliega en escalas temporales que sobrepasan la percepción humana.
+3. Persistencia temporal: Los hiperobjetos no tienen un ciclo de vida corto, sino que existen a lo largo de períodos muy largos, mucho más allá de la vida humana. Un ejemplo de esto es el cambio climático, que se despliega en escalas temporales que sobrepasan la percepción humana.
 
 4. Impacto en la percepción humana: Los hiperobjetos desafían nuestras formas de entender el mundo, ya que nuestras capacidades cognitivas y sensoriales están limitadas para abordarlos en su totalidad.
 
