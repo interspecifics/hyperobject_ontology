@@ -5,7 +5,7 @@ Total Collection Statistics:
 ├── Total Videos: 302
 └── Total Duration: 51.74 minutes
 
-📁 DEFORESTACION
+❂ DEFORESTACION
 ├── Videos: 36
 ├── Duration: 379.44 seconds
 ├── Mean Duration: 10.54 seconds
@@ -13,7 +13,7 @@ Total Collection Statistics:
     ├── vert: 18 videos
     └── hor: 18 videos
 
-📁 FABRICAS
+❂ FABRICAS
 ├── Videos: 15
 ├── Duration: 158.1 seconds
 ├── Mean Duration: 10.54 seconds
@@ -21,7 +21,7 @@ Total Collection Statistics:
     ├── ver: 7 videos
     └── hor: 8 videos
 
-📁 WASTE POLLUTION
+❅ WASTE POLLUTION
 ├── Videos: 14
 ├── Duration: 144.92 seconds
 ├── Mean Duration: 10.35 seconds
@@ -29,7 +29,7 @@ Total Collection Statistics:
     ├── ver: 7 videos
     └── hor: 7 videos
 
-📁 WILDFIRE
+❈ WILDFIRE
 ├── Videos: 16
 ├── Duration: 136.66 seconds
 ├── Mean Duration: 8.54 seconds
@@ -37,7 +37,7 @@ Total Collection Statistics:
     ├── ver: 8 videos
     └── hor: 8 videos
 
-📁 DESAROLLO 
+❇ DESAROLLO 
 ├── Videos: 22
 ├── Duration: 289.94 seconds
 ├── Mean Duration: 13.18 seconds
@@ -45,7 +45,7 @@ Total Collection Statistics:
     ├── ver: 12 videos
     └── hor: 10 videos
 
-📁 GANADERIA
+❈ GANADERIA
 ├── Videos: 44
 ├── Duration: 463.76 seconds
 ├── Mean Duration: 10.54 seconds
@@ -53,7 +53,7 @@ Total Collection Statistics:
     ├── vert: 22 videos
     └── hor: 22 videos
 
-📁 HURACAN
+❅ HURACAN
 ├── Videos: 28
 ├── Duration: 241.16 seconds
 ├── Mean Duration: 8.61 seconds
@@ -61,14 +61,14 @@ Total Collection Statistics:
     ├── ver: 9 videos
     └── hor: 19 videos
 
-📁 MACROS-FUERZAS
+❅ MACROS-FUERZAS
 ├── Videos: 10
 ├── Duration: 105.4 seconds
 ├── Mean Duration: 10.54 seconds
 └── Orientations:
     └── hor: 10 videos
 
-📁 MINERIA
+❇ MINERIA
 ├── Videos: 26
 ├── Duration: 274.04 seconds
 ├── Mean Duration: 10.54 seconds
@@ -76,7 +76,7 @@ Total Collection Statistics:
     ├── vert: 13 videos
     └── hor: 13 videos
 
-📁 NATURALEZA-ANIMALES
+✿ NATURALEZA-ANIMALES
 ├── Videos: 91
 ├── Duration: 911.17 seconds
 ├── Mean Duration: 10.01 seconds

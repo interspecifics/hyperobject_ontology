@@ -65,7 +65,9 @@ class OntologyCartographer:
             stats = self.get_category_stats(data)
             
             # Category header
-            output.append(f"📁 {category.upper()}")
+            import random
+            emojis = "❂❈※❅❇✿✴︎"
+            output.append(f"{random.choice(emojis)} {category.upper()}")
             
             # Category statistics
             output.append(f"├── Videos: {stats['total_videos']}")
