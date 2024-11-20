@@ -3,62 +3,117 @@ import json
 import os
 import pygame
 from ffpyplayer.player import MediaPlayer
-import uuid  # Import uuid for generating unique IDs
+import uuid
+from oscpy.server import OSCThreadServer
+from oscpy.client import OSCClient
+import time
 
 # Load metadata
-with open('videos.json', 'r') as f:
+with open('ontology_map.json', 'r') as f:
     videos = json.load(f)
 
-# Create a unique ID for this slave
-slave_id = str(uuid.uuid4())
+class VideoPlayer:
+    def __init__(self, orientation, slave_id):
+        self.orientation = orientation  # "hor" or "ver"
+        self.slave_id = slave_id
+        self.current_video = None
+        self.player = None
+        self.screen = None
+        
+        # Filter videos by orientation
+        self.available_videos = [
+            video for video in videos 
+            if video['orientation'].lower() == self.orientation
+        ]
+        
+        # Initialize pygame
+        pygame.init()
+        
+        # Set up display based on orientation
+        if orientation == "hor":
+            self.screen = pygame.display.set_mode((1280, 768))
+        else:  # vertical
+            self.screen = pygame.display.set_mode((768, 1280))
+            
+        pygame.display.set_caption(f'Video Player - {orientation} - {slave_id}')
 
-# Create a socket server to listen for the master's message
-host = '0.0.0.0'
-port = 12345
+    def play_video(self, video_path):
+        if self.player:
+            self.player.close_player()
+            
+        self.player = MediaPlayer(video_path)
+        clock = pygame.time.Clock()
 
-def play_video(video_path):
-    pygame.init()
-    screen = pygame.display.set_mode((640, 480))
-    pygame.display.set_caption('Video Player')
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.player.close_player()
+                    return
 
-    player = MediaPlayer(video_path)
-    clock = pygame.time.Clock()
+            frame, val = player.get_frame()
+            if val == 'eof':
+                break
+                
+            if frame is not None:
+                img, t = frame
+                img = pygame.image.frombuffer(img.to_bytearray()[0], img.get_size(), "RGB")
+                self.screen.blit(img, (0, 0))
+                pygame.display.flip()
+                clock.tick(30)
 
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                player.close_player()
-                pygame.quit()
-                return
+class SlaveNode:
+    def __init__(self, orientation):
+        self.slave_id = str(uuid.uuid4())
+        self.orientation = orientation
+        self.osc_server = OSCThreadServer()
+        self.video_player = VideoPlayer(orientation, self.slave_id)
+        
+        # Bind OSC server
+        self.sock = self.osc_server.listen(
+            address='0.0.0.0',
+            port=8000 + (1 if orientation == "hor" else 2),
+            default=True
+        )
+        
+        # Register OSC handlers
+        self.osc_server.bind(b'/play', self.handle_play)
+        self.osc_server.bind(b'/stop', self.handle_stop)
+        
+        # Create client to respond to master
+        self.client = OSCClient('192.168.1.100', 7000)
+        
+        # Announce presence to master
+        self.client.send_message(
+            b'/slave/announce',
+            [self.slave_id.encode(), orientation.encode()]
+        )
 
-        frame, val = player.get_frame()
-        if val == 'eof':
-            break
-        if frame is not None:
-            img, t = frame
-            img = pygame.image.frombuffer(img.to_bytearray()[0], img.get_size(), "RGB")
-            screen.blit(img, (0, 0))
-            pygame.display.flip()
-            clock.tick(30)
+    def handle_play(self, video_name):
+        video_to_play = next(
+            (v for v in self.video_player.available_videos 
+             if v['name'] == video_name.decode()),
+            None
+        )
+        
+        if video_to_play:
+            self.video_player.play_video(video_to_play['path'])
+            
+    def handle_stop(self):
+        if self.video_player.player:
+            self.video_player.player.close_player()
 
-    player.close_player()
-    pygame.quit()
+def main():
+    # Determine orientation based on hostname
+    hostname = socket.gethostname()
+    orientation = "hor" if "horizontal" in hostname.lower() else "ver"
+    
+    slave = SlaveNode(orientation)
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Shutting down slave node...")
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.bind((host, port))
-    s.listen()
-
-    print("Waiting for connection from master...")
-    conn, addr = s.accept()
-    with conn:
-        print(f"Connected by {addr}")
-        # Send the slave ID to the master
-        conn.sendall(slave_id.encode('utf-8'))
-        data = conn.recv(1024).decode('utf-8')
-        if data:
-            # Find the video in the metadata
-            video_to_play = next((video for video in videos if video['name'] == data), None)
-            if video_to_play:
-                print(f"Loading video: {video_to_play['name']}")
-                video_path = f"{video_to_play['name']}.mp4"
-                play_video(video_path)
+if __name__ == "__main__":
+    main()
