@@ -25,19 +25,15 @@ def parse_arguments():
                       help='IP address (optional, will be auto-assigned if not provided)')
     return parser.parse_args()
 
-def get_default_ip(orientation, node):
-    """Calculate default IP based on orientation and node number"""
-    base = 201 if orientation == "hor" else 203
-    return f"192.168.1.{base + node - 1}"
-
 class VideoPlayer:
-    def __init__(self, orientation, slave_id):
+    def __init__(self, orientation):
         self.orientation = orientation
-        self.slave_id = slave_id
         self.current_video = None
         self.player = None
-        self.screen = None
         self.stop_event = Event()
+        self.frame_queue = Queue(maxsize=4)
+        self.command_queue = Queue()
+        self.video_finished = Event()
         
         # Filter videos by orientation
         self.available_videos = {
@@ -45,136 +41,224 @@ class VideoPlayer:
             if video['orientation'].lower() == self.orientation
         }
         
-        # Initialize pygame
-        pygame.init()
+        # Screen setup will be done in main thread
+        self.screen = None
+        self.black_surface = None
         
-        # Set up display based on orientation
-        if orientation == "hor":
-            self.screen = pygame.display.set_mode((1280, 768), pygame.FULLSCREEN)
-        else:  # vertical
-            self.screen = pygame.display.set_mode((768, 1280), pygame.FULLSCREEN)
-            
-        pygame.display.set_caption(f'Video Player - {orientation} - {slave_id}')
+    def initialize_display(self):
+        """Initialize pygame display (must be called from main thread)"""
+        pygame.init()
+        if self.orientation == "hor":
+            self.screen = pygame.display.set_mode((1280, 768))
+        else:
+            self.screen = pygame.display.set_mode((768, 1280))
+        pygame.display.set_caption(f'Video Player - {self.orientation}')
+        
+        # Create black surface for transitions
+        self.black_surface = pygame.Surface(self.screen.get_rect().size)
+        self.black_surface.fill((0, 0, 0))
 
-    def play_video(self, video_name):
-        """Play a single video and return when complete"""
+    def main_loop(self):
+        """Main loop that runs in the main thread"""
+        clock = pygame.time.Clock()
+        
+        while True:
+            # Handle pygame events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return
+
+            # If current video is finished, check for next video
+            if self.video_finished.is_set():
+                self.video_finished.clear()
+                try:
+                    # Check for next video in queue
+                    if not self.command_queue.empty():
+                        video_name = self.command_queue.get_nowait()
+                        print(f"Starting next video from queue: {video_name}")
+                        self._start_video(video_name)
+                except Exception as e:
+                    print(f"Error starting next video: {e}")
+
+            # Check for new video commands when no video is playing
+            if self.current_video is None:
+                try:
+                    video_name = self.command_queue.get_nowait()
+                    print(f"Starting first video: {video_name}")
+                    self._start_video(video_name)
+                except Exception:
+                    pass
+                
+            # Display frames if available
+            try:
+                frame_data = self.frame_queue.get_nowait()
+                if frame_data == "EOF":
+                    print("Reached end of video")
+                    # Show black screen after video ends
+                    self.screen.blit(self.black_surface, (0, 0))
+                    pygame.display.flip()
+                    self.stop_video()
+                    self.video_finished.set()
+                elif isinstance(frame_data, pygame.Surface):
+                    self.screen.blit(frame_data, (0, 0))
+                    pygame.display.flip()
+            except Exception:
+                pass
+                
+            # Use video-specific FPS if available, otherwise default to 30
+            if self.current_video and self.current_video in self.available_videos:
+                fps = self.available_videos[self.current_video].get('fps', 30)
+            else:
+                fps = 30
+                
+            clock.tick(fps)
+
+    def _start_video(self, video_name):
+        """Start playing a video (internal method)"""
         if video_name not in self.available_videos:
             print(f"Video not found: {video_name}")
             return
 
-        video = self.available_videos[video_name]
-        
+        print(f"Starting video: {video_name}")
+        # Clean up previous video before starting new one
         if self.player:
-            self.player.close_player()
+            self.stop_video()
+            # Clear frame queue
+            while not self.frame_queue.empty():
+                try:
+                    self.frame_queue.get_nowait()
+                except:
+                    pass
             
+        video = self.available_videos[video_name]
+        print(f"Starting playback of {video_name} from {video['path']}")
+        
+        self.current_video = video_name
         self.stop_event.clear()
+        self.video_finished.clear()
         self.player = MediaPlayer(video['path'])
-        clock = pygame.time.Clock()
+        
+        # Start frame fetching thread
+        fetch_thread = Thread(target=self._fetch_frames)
+        fetch_thread.daemon = True
+        fetch_thread.start()
 
+    def _fetch_frames(self):
+        """Fetch frames in separate thread"""
         while not self.stop_event.is_set():
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.stop_event.set()
-                    return
-
             frame, val = self.player.get_frame()
             
             if val == 'eof':
+                self.frame_queue.put("EOF")
                 break
                 
             if frame is not None:
                 image, pts = frame
-                
-                # Convert frame to pygame surface
-                surface = pygame.image.frombuffer(
-                    image.to_bytearray()[0],
-                    image.get_size(),
-                    "RGB"
-                )
-                
-                # Scale to fit screen while maintaining aspect ratio
-                screen_rect = self.screen.get_rect()
-                surface = pygame.transform.scale(surface, screen_rect.size)
-                
-                self.screen.blit(surface, (0, 0))
-                pygame.display.flip()
-                clock.tick(30)
+                try:
+                    surface = pygame.image.frombuffer(
+                        image.to_bytearray()[0],
+                        image.get_size(),
+                        "RGB"
+                    )
+                    surface = pygame.transform.scale(surface, self.screen.get_rect().size)
+                    self.frame_queue.put(surface)
+                except Exception as e:
+                    print(f"Error processing frame: {e}")
+                    continue
 
+    def play_video(self, video_name):
+        """Queue a video for playback"""
+        self.command_queue.put(video_name)
+
+    def stop_video(self):
+        """Stop the current video"""
+        print(f"Stopping video: {self.current_video}")
+        self.stop_event.set()
         if self.player:
             self.player.close_player()
             self.player = None
-
-    def stop_video(self):
-        """Stop the current video playback"""
-        self.stop_event.set()
+        self.current_video = None
 
 class SlaveNode:
     def __init__(self, orientation, ip_address):
+        print(f"Initializing slave node with orientation: {orientation}")
         self.slave_id = str(uuid.uuid4())
         self.orientation = orientation
         self.osc_server = OSCThreadServer()
-        self.video_player = VideoPlayer(orientation, self.slave_id)
-        self.video_queue = Queue()
-        self.current_video = None
+        
+        # Initialize video player
+        self.video_player = VideoPlayer(orientation)
+        print("Video player initialized")
+        
+        # Initialize display in main thread
+        self.video_player.initialize_display()
         
         # Bind OSC server
-        self.sock = self.osc_server.listen(
-            address='0.0.0.0',
-            port=8000 + (1 if orientation == "hor" else 2),
-            default=True
-        )
+        try:
+            self.sock = self.osc_server.listen(
+                address='0.0.0.0',
+                port=8001 if orientation == "hor" else 8002,
+                default=True
+            )
+            print(f"OSC server listening on port {8001 if orientation == 'hor' else 8002}")
+        except Exception as e:
+            print(f"Error binding OSC server: {e}")
+            raise
         
         # Register OSC handlers
         self.osc_server.bind(b'/play', self.handle_play)
         self.osc_server.bind(b'/stop', self.handle_stop)
         
         # Create client to respond to master
-        self.client = OSCClient('192.168.1.200', 7000)
-        
-        # Start video player thread
-        self.player_thread = Thread(target=self.video_player_loop)
-        self.player_thread.daemon = True
-        self.player_thread.start()
+        try:
+            self.client = OSCClient('127.0.0.1', 7000)
+            print("Created OSC client to connect to master")
+        except Exception as e:
+            print(f"Error creating OSC client: {e}")
+            raise
         
         # Announce presence to master
-        self.client.send_message(
-            b'/slave/announce',
-            [self.slave_id.encode(), orientation.encode()]
-        )
+        try:
+            print(f"Announcing presence to master with ID: {self.slave_id}")
+            self.client.send_message(
+                b'/slave/announce',
+                [self.slave_id.encode(), orientation.encode()]
+            )
+            print("Announcement sent to master")
+        except Exception as e:
+            print(f"Error announcing to master: {e}")
+            raise
 
     def handle_play(self, video_name):
         """Handle incoming play command"""
         video_name = video_name.decode()
         print(f"Received play command for: {video_name}")
-        self.video_queue.put(video_name)
+        self.video_player.play_video(video_name)
 
     def handle_stop(self):
         """Handle stop command"""
-        if self.video_player:
-            self.video_player.stop_video()
+        print("Received stop command")
+        self.video_player.stop_video()
 
-    def video_player_loop(self):
-        """Main loop for video playback"""
-        while True:
-            video_name = self.video_queue.get()
-            self.current_video = video_name
-            self.video_player.play_video(video_name)
-            self.current_video = None
+    def run(self):
+        """Run the main loop"""
+        self.video_player.main_loop()
 
 def main():
     args = parse_arguments()
-    ip_address = args.ip or get_default_ip(args.orientation, args.node)
-    
-    # Initialize slave node with command line arguments
-    slave = SlaveNode(args.orientation, ip_address)
+    print(f"Starting slave node with args: {args}")
     
     try:
-        while True:
-            time.sleep(1)
+        # Initialize slave node
+        slave = SlaveNode(args.orientation, args.ip or "127.0.0.1")
+        
+        # Run main loop (this will block)
+        slave.run()
     except KeyboardInterrupt:
         print("Shutting down slave node...")
-        if slave.video_player:
-            slave.video_player.stop_video()
+    except Exception as e:
+        print(f"Error in main: {e}")
+    finally:
         pygame.quit()
 
 if __name__ == "__main__":

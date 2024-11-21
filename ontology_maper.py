@@ -146,7 +146,7 @@ class VideoOntologyMapper:
         
         return {
             "name": file_path.name,
-            "path": str(file_path.relative_to(self.root_dir)),
+            "path": str(self.root_dir) + '/' + str(file_path.relative_to(self.root_dir)),
             "category": category,
             "orientation": orientation,
             "video_type": video_type,
