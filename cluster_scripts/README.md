@@ -13,24 +13,23 @@ The cluster uses static IP addresses in the 192.168.1.2xx range:
 
 1. Copy all files to /home/pi/video_player/
 
-2. Set the node type in /etc/environment before installation:
-
-For the master+display node (choose one):
+2. Set up the environment:
 ```bash
-# If this node will be master + horizontal1:
-echo 'NODE_TYPE=master-hor1' | sudo tee -a /etc/environment
+# Make scripts executable
+chmod +x /home/pi/video_player/cluster_scripts/*.sh
 
-# OR if this node will be master + vertical1:
-echo 'NODE_TYPE=master-ver1' | sudo tee -a /etc/environment
-```
+# Set up environment variables (choose one):
+# For master + horizontal1:
+sudo /home/pi/video_player/cluster_scripts/setup_environment.sh master-hor1
 
-For other nodes:
-```bash
-# On horizontal2:
-echo 'NODE_TYPE=hor2' | sudo tee -a /etc/environment
+# OR for master + vertical1:
+sudo /home/pi/video_player/cluster_scripts/setup_environment.sh master-ver1
 
-# On vertical2:
-echo 'NODE_TYPE=ver2' | sudo tee -a /etc/environment
+# OR for horizontal2:
+sudo /home/pi/video_player/cluster_scripts/setup_environment.sh hor2
+
+# OR for vertical2:
+sudo /home/pi/video_player/cluster_scripts/setup_environment.sh ver2
 ```
 
 3. Run the installation script:
@@ -38,32 +37,23 @@ echo 'NODE_TYPE=ver2' | sudo tee -a /etc/environment
 /home/pi/video_player/cluster_scripts/install_dependencies.sh
 ```
 
-## Service Management
-
+4. Reboot the system:
 ```bash
-# Start service
-sudo systemctl start video-player
-
-# Check status
-sudo systemctl status video-player
-
-# View logs
-tail -f /home/pi/video_player/logs/*.log
+sudo reboot
 ```
 
-## Manual Start
+The video player will start automatically after reboot.
 
-You can also start nodes manually:
+## Manual Start/Stop
 
+To stop the video player:
 ```bash
-# On master+display node:
-/home/pi/video_player/cluster_scripts/start_node.sh master-hor1  # For master + horizontal1
-# OR
-/home/pi/video_player/cluster_scripts/start_node.sh master-ver1  # For master + vertical1
+pkill -f "python3 ho_"
+```
 
-# On other nodes:
-/home/pi/video_player/cluster_scripts/start_node.sh hor2    # For horizontal 2
-/home/pi/video_player/cluster_scripts/start_node.sh ver2    # For vertical 2
+To start manually:
+```bash
+/home/pi/video_player/cluster_scripts/start_node.sh $NODE_TYPE
 ```
 
 ## Troubleshooting
