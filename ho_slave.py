@@ -25,6 +25,13 @@ def parse_arguments():
                       help='IP address (optional, will be auto-assigned if not provided)')
     return parser.parse_args()
 
+def get_default_ip(orientation, node):
+    """Calculate default IP based on orientation and node number"""
+    if orientation == "hor":
+        return f"192.168.1.{201 if node == 1 else 202}"  # 201 for hor1, 202 for hor2
+    else:  # vertical
+        return f"192.168.1.{203 if node == 1 else 204}"  # 203 for ver1, 204 for ver2
+
 class VideoPlayer:
     def __init__(self, orientation):
         self.orientation = orientation
