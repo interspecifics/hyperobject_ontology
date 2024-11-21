@@ -35,7 +35,7 @@ class VideoOrchestrator:
         # Initialize OSC server
         self.osc_server = OSCThreadServer()
         self.sock = self.osc_server.listen(
-            address='192.168.1.200',  # Master's IP
+            address='0.0.0.0',  # Changed from 192.168.1.200 to listen on all interfaces
             port=7000,
             default=True
         )

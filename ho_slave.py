@@ -229,12 +229,24 @@ class SlaveNode:
         self.osc_server.bind(b'/play', self.handle_play)
         self.osc_server.bind(b'/stop', self.handle_stop)
         
-        # Create client to respond to master (using master's IP)
+        # Create client to respond to master
         try:
             self.client = OSCClient('192.168.1.200', 7000)
             print("Created OSC client to connect to master")
         except Exception as e:
             print(f"Error creating OSC client: {e}")
+            raise
+
+        # Announce presence to master
+        try:
+            print(f"Announcing presence to master with ID: {self.slave_id}")
+            self.client.send_message(
+                b'/slave/announce',
+                [self.slave_id.encode(), orientation.encode()]
+            )
+            print("Announcement sent to master")
+        except Exception as e:
+            print(f"Error announcing to master: {e}")
             raise
 
     def handle_play(self, video_name):
@@ -249,8 +261,18 @@ class SlaveNode:
         self.video_player.stop_video()
 
     def run(self):
-        """Run the main loop"""
-        self.video_player.main_loop()
+        """Main loop that runs in the main thread"""
+        print("Starting main loop...")
+        try:
+            # Run the video player's main loop
+            self.video_player.main_loop()
+        except KeyboardInterrupt:
+            print("Received keyboard interrupt")
+        except Exception as e:
+            print(f"Error in main loop: {e}")
+            raise
+        finally:
+            print("Exiting main loop")
 
 def main():
     args = parse_arguments()
