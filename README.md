@@ -28,6 +28,10 @@ tools for analyzing, cataloging, and describing video collections through the le
 
 🀦 [ontology map with hyperobject annotations](annotated_ontology.json)
 
+🀧 [video orchestration process](cluster_scripts/video_orchestration_process.txt)
+
+🀤 [cluster setup instructions](cluster_scripts/README.md)
+
 ## Overview
 
 The repository consists of several tools that work together to:
@@ -35,6 +39,7 @@ The repository consists of several tools that work together to:
 2. Generate a cartographic diagram of the video collection
 3. Generate descriptions using GPT-4o vision model
 4. Organize videos by hyperobject categories and spatial orientations
+5. Coordinate synchronized video playback across multiple displays
 
 ## Components
 
@@ -73,6 +78,18 @@ The repository consists of several tools that work together to:
   - Maintains unique ID for master-slave communication
   - Reads video metadata from videos.json
   - Manages display settings and video rendering
+
+### Video Reproduction Cluster
+
+The project includes a multi-display video playback system that synchronizes videos across 4 Raspberry Pi devices:
+
+- 1 Master node that also runs Display 1 (horizontal or vertical)
+- 1 Additional horizontal display node
+- 1 Additional vertical display node
+
+For detailed setup and configuration:
+- See [cluster setup instructions](cluster_scripts/README.md) for hardware setup, network configuration and installation steps
+- See [video orchestration process](cluster_scripts/video_orchestration_process.txt) for details on the synchronization system and playback coordination
 
 ### ToDo
 
@@ -117,4 +134,3 @@ The repository consists of several tools that work together to:
 
 1. Clone the repository
 2. Install dependencies:
-

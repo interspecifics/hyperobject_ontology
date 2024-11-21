@@ -12,10 +12,13 @@ class OntologyCartographer:
         self.categories = self._organize_by_category()
 
     def _organize_by_category(self) -> Dict:
-        """Organize videos by category with orientation stats"""
+        """Organize videos by category with orientation and video type stats"""
         categories = defaultdict(lambda: {
             'videos': [],
-            'orientations': defaultdict(list),
+            'orientations': defaultdict(lambda: {
+                'videos': [],
+                'types': defaultdict(list)
+            }),
             'total_duration': 0,
             'count': 0
         })
@@ -23,9 +26,11 @@ class OntologyCartographer:
         for video in self.data:
             category = video.get('category', 'uncategorized')
             orientation = video.get('orientation', 'unknown')
+            video_type = video.get('video_type', 'unknown')
             
             categories[category]['videos'].append(video)
-            categories[category]['orientations'][orientation].append(video)
+            categories[category]['orientations'][orientation]['videos'].append(video)
+            categories[category]['orientations'][orientation]['types'][video_type].append(video)
             categories[category]['total_duration'] += video.get('duration', 0)
             categories[category]['count'] += 1
             
@@ -33,11 +38,28 @@ class OntologyCartographer:
 
     def get_category_stats(self, category_data: Dict) -> Dict:
         """Calculate statistics for a category"""
-        # Calculate total duration for each orientation
-        orientation_durations = {
-            orient: sum(video.get('duration', 0) for video in videos)
-            for orient, videos in category_data['orientations'].items()
-        }
+        # Calculate stats for each orientation and its video types
+        orientations = {}
+        for orient, orient_data in category_data['orientations'].items():
+            # Calculate duration for this orientation
+            orient_duration = sum(video.get('duration', 0) for video in orient_data['videos'])
+            
+            # Calculate stats for each video type within this orientation
+            type_stats = {}
+            for vid_type, videos in orient_data['types'].items():
+                type_duration = sum(video.get('duration', 0) for video in videos)
+                type_stats[vid_type] = {
+                    'count': len(videos),
+                    'duration_sec': round(type_duration, 2),
+                    'duration_min': round(type_duration / 60, 2)
+                }
+            
+            orientations[orient] = {
+                'count': len(orient_data['videos']),
+                'duration_sec': round(orient_duration, 2),
+                'duration_min': round(orient_duration / 60, 2),
+                'types': type_stats
+            }
         
         # Calculate duration stats (min, mean, max)
         durations = [video.get('duration', 0) for video in category_data['videos']]
@@ -47,21 +69,13 @@ class OntologyCartographer:
             round(max(durations), 2)
         ) if durations else (0, 0, 0)
         
-        stats = {
+        return {
             'total_videos': category_data['count'],
             'total_duration': round(category_data['total_duration'], 2),
             'total_duration_min': round(category_data['total_duration'] / 60, 2),
             'duration_stats': duration_stats,
-            'orientations': {
-                orient: {
-                    'count': len(videos),
-                    'duration_sec': round(orientation_durations[orient], 2),
-                    'duration_min': round(orientation_durations[orient] / 60, 2)
-                }
-                for orient, videos in category_data['orientations'].items()
-            }
+            'orientations': orientations
         }
-        return stats
 
     def print_tree(self, output_file='cartography_diagram.txt'):
         """Print the ontology tree with statistics and save to file"""
@@ -100,6 +114,12 @@ class OntologyCartographer:
             for i, (orient, orient_stats) in enumerate(orientations.items(), 1):
                 prefix = '    └──' if i == len(orientations) else '    ├──'
                 output.append(f"{prefix} {orient}: {orient_stats['count']} videos ({orient_stats['duration_min']} minutes)")
+                
+                # Add video type statistics
+                types = orient_stats['types']
+                for j, (vid_type, type_stats) in enumerate(types.items(), 1):
+                    type_prefix = '        └──' if j == len(types) else '        ├──'
+                    output.append(f"{type_prefix} {vid_type}: {type_stats['count']} videos ({type_stats['duration_min']} minutes)")
             
             output.append("")
         

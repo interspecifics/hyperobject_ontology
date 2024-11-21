@@ -16,7 +16,7 @@ class VideoOntologyMapper:
     through their organization, metadata, and relationships.
     """
 
-    def __init__(self, root_dir="Generados"):
+    def __init__(self, root_dir="Videos_hd_final"):
         """
         Initialize the hyperobject video mapper with a root archive directory.
 
@@ -109,13 +109,15 @@ class VideoOntologyMapper:
         1. Validates the file is an MP4 video
         2. Extracts technical metadata like dimensions, framerate and duration using OpenCV
         3. Analyzes the file path to determine category and orientation based on folder structure
-        4. Combines all information into a standardized ontology entry
+        4. Determines video type (animated or text) based on filename patterns
+        5. Combines all information into a standardized ontology entry
         
         The resulting entry contains:
         - name: Original filename
         - path: Relative path from root directory
         - category: Classification based on folder structure
         - orientation: Spatial orientation (horizontal/vertical) if specified
+        - video_type: Type of video (animated or text)
         - width: Video width in pixels
         - height: Video height in pixels 
         - fps: Frames per second
@@ -138,11 +140,16 @@ class VideoOntologyMapper:
 
         category, orientation = self.get_path_info(file_path)
         
+        # Determine video type based on filename
+        filename = file_path.name.lower()
+        video_type = "animated" if ("gen" in filename or "ghq5" in filename) else "text"
+        
         return {
             "name": file_path.name,
             "path": str(file_path.relative_to(self.root_dir)),
             "category": category,
             "orientation": orientation,
+            "video_type": video_type,
             **metadata
         }
 

@@ -19,17 +19,17 @@ pip3 install \
     oscpy \
     python-osc
 
-# Make all startup scripts executable
-chmod +x /home/pi/video_player/cluster_scripts/start_*.sh
+# Make startup script executable
+chmod +x /home/pi/video_player/cluster_scripts/start_node.sh
 
-# Create systemd service files for auto-start
+# Create systemd service file
 cat << EOF | sudo tee /etc/systemd/system/video-player.service
 [Unit]
 Description=Video Player Node
 After=network.target
 
 [Service]
-ExecStart=/home/pi/video_player/cluster_scripts/start_\${HOSTNAME}.sh
+ExecStart=/home/pi/video_player/cluster_scripts/start_node.sh \${NODE_TYPE}
 WorkingDirectory=/home/pi/video_player
 User=pi
 Restart=always
@@ -38,14 +38,7 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
-# Enable and start the service
+# Enable the service
 sudo systemctl enable video-player
-sudo systemctl start video-player
 
-# Add network configuration
-cat << EOF | sudo tee -a /etc/dhcpcd.conf
-interface eth0
-static ip_address=192.168.1.\${IP_SUFFIX}/24
-static routers=192.168.1.1
-static domain_name_servers=8.8.8.8 8.8.4.4
-EOF 
+# Note: NODE_TYPE should be set in /etc/environment on each machine 

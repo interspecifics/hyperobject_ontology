@@ -5,6 +5,7 @@ from oscpy.server import OSCThreadServer
 from oscpy.client import OSCClient
 import time
 import random
+from collections import defaultdict
 
 class VideoOrchestrator:
     def __init__(self):
@@ -40,35 +41,87 @@ class VideoOrchestrator:
             port = 8001 if orientation == "hor" else 8002
             self.slave_clients[slave_id] = OSCClient('192.168.1.'+slave_id.split('-')[0], port)
 
-    def select_videos_by_category(self, category):
-        """Select videos for all displays in a category"""
-        hor_videos = [v for v in self.videos if v['category'] == category and v['orientation'] == 'hor']
-        ver_videos = [v for v in self.videos if v['category'] == category and v['orientation'] == 'ver']
+    def organize_videos_by_type(self, category, orientation):
+        """Split videos into animated and text types for a given category and orientation"""
+        category_videos = [v for v in self.videos 
+                         if v['category'] == category and v['orientation'] == orientation]
         
-        selected = {
-            'hor': random.sample(hor_videos, min(len(hor_videos), len(self.slaves['hor']))),
-            'ver': random.sample(ver_videos, min(len(ver_videos), len(self.slaves['ver'])))
+        animated = [v for v in category_videos if v['video_type'] == 'animated']
+        text = [v for v in category_videos if v['video_type'] == 'text']
+        
+        return animated, text
+
+    def create_synchronized_playlist(self, category):
+        """Create synchronized playlists for all nodes for a given category"""
+        # Get videos for each orientation
+        hor_animated, hor_text = self.organize_videos_by_type(category, 'hor')
+        ver_animated, ver_text = self.organize_videos_by_type(category, 'ver')
+        
+        # Shuffle all video lists
+        random.shuffle(hor_animated)
+        random.shuffle(hor_text)
+        random.shuffle(ver_animated)
+        random.shuffle(ver_text)
+        
+        # Calculate number of slots needed
+        total_slots = max(
+            len(hor_animated) // 2 + len(hor_text),
+            len(ver_animated) // 2 + len(ver_text)
+        )
+        
+        # Initialize playlists for each node
+        playlists = {
+            'hor': [[] for _ in range(2)],  # 2 horizontal nodes
+            'ver': [[] for _ in range(2)]   # 2 vertical nodes
         }
         
-        return selected
+        # Distribute animated videos
+        for i, video in enumerate(hor_animated):
+            node_idx = i % 2
+            playlists['hor'][node_idx].append(video)
+            
+        for i, video in enumerate(ver_animated):
+            node_idx = i % 2
+            playlists['ver'][node_idx].append(video)
+        
+        # Insert text videos at coordinated positions
+        text_interval = max(3, total_slots // (len(hor_text) + len(ver_text)))
+        current_pos = text_interval
+        
+        for text_video in hor_text:
+            if current_pos < len(playlists['hor'][0]):
+                playlists['hor'][0].insert(current_pos, text_video)
+                playlists['hor'][1].insert(current_pos, None)  # Other node waits
+                current_pos += text_interval
+                
+        current_pos = text_interval + text_interval // 2  # Offset for vertical nodes
+        for text_video in ver_text:
+            if current_pos < len(playlists['ver'][0]):
+                playlists['ver'][0].insert(current_pos, text_video)
+                playlists['ver'][1].insert(current_pos, None)  # Other node waits
+                current_pos += text_interval
+        
+        return playlists
 
     def play_category(self, category):
         """Orchestrate playing videos from a category across all slaves"""
-        videos = self.select_videos_by_category(category)
+        playlists = self.create_synchronized_playlist(category)
         
-        # Send videos to horizontal displays
-        for slave_id, video in zip(self.slaves['hor'], videos['hor']):
-            self.slave_clients[slave_id].send_message(
-                b'/play',
-                [video['name'].encode()]
-            )
-            
-        # Send videos to vertical displays
-        for slave_id, video in zip(self.slaves['ver'], videos['ver']):
-            self.slave_clients[slave_id].send_message(
-                b'/play',
-                [video['name'].encode()]
-            )
+        # Send playlists to each slave
+        for orientation in ['hor', 'ver']:
+            for slave_idx, slave_id in enumerate(self.slaves[orientation]):
+                playlist = playlists[orientation][slave_idx]
+                for video in playlist:
+                    if video is not None:  # Skip None entries (wait slots)
+                        self.slave_clients[slave_id].send_message(
+                            b'/play',
+                            [video['name'].encode()]
+                        )
+                        # Wait for video duration
+                        time.sleep(video['duration'])
+                    else:
+                        # Wait for average video duration when None
+                        time.sleep(10)  # Default wait time
 
     def run(self):
         """Main loop to orchestrate video playback"""

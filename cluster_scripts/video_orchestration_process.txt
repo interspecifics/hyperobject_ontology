@@ -1,0 +1,168 @@
+Video Orchestration Process
+==========================
+
+1. System Architecture
+---------------------
+- 1 Master Node (192.168.1.200)
+- 2 Horizontal Slave Nodes (192.168.1.201, 192.168.1.202)
+- 2 Vertical Slave Nodes (192.168.1.203, 192.168.1.204)
+
+2. Initialization Process
+------------------------
+a) Master Node:
+   - Loads video metadata from ontology_map.json
+   - Starts OSC server on port 7000
+   - Waits for slave nodes to announce themselves
+
+b) Slave Nodes:
+   - Initialize with orientation (hor/ver) and node number (1/2)
+   - Set up fullscreen pygame display
+   - Create video queue and player thread
+   - Announce presence to master node
+   - Start OSC server on port 8001 (horizontal) or 8002 (vertical)
+
+3. Video Organization
+--------------------
+For each category, videos are organized into:
+a) Animated videos (video_type: "animated")
+   - Distributed evenly between nodes of same orientation
+   - Play continuously
+
+b) Text videos (video_type: "text")
+   - Inserted at intervals
+   - Only one text video plays at a time
+   - Alternates between horizontal and vertical displays
+
+4. Playlist Creation
+-------------------
+Master node creates synchronized playlists:
+1. Separates videos by type and orientation
+2. Shuffles both animated and text videos
+3. Distributes animated videos evenly between nodes
+4. Inserts text videos at calculated intervals
+5. Adds wait slots (None) for synchronization
+
+5. Playback Process
+------------------
+a) Master Node:
+   - Sends video commands to slaves
+   - Manages timing and synchronization
+   - Ensures text videos don't overlap
+   - Waits for appropriate duration between videos
+
+b) Slave Nodes:
+   - Maintain queue of videos to play
+   - Handle video transitions
+   - Scale videos to fit screen
+   - Report completion back to master
+
+6. Synchronization
+-----------------
+- Text videos are coordinated across all displays
+- Wait slots (None) ensure nodes stay synchronized
+- Master controls timing based on video durations
+- Slaves report status for coordination
+
+7. Error Handling
+----------------
+- Slaves handle missing videos gracefully
+- Master monitors slave connections
+- Clean shutdown process for all nodes
+- Automatic reconnection handling
+
+8. Video Requirements
+--------------------
+- Horizontal videos: 1280x768 resolution
+- Vertical videos: 768x1280 resolution
+- Supported formats: MP4 with H.264 codec
+- Each video includes duration metadata
+
+9. Network Communication
+-----------------------
+- OSC protocol for all communications
+- Master to Slave: /play, /stop commands
+- Slave to Master: /slave/announce messages
+- Automatic IP assignment based on node type
+
+10. Categories and Rotation
+-------------------------
+- Videos grouped by category in ontology_map.json
+- Categories play in sequence
+- All animated videos play once per category
+- Text videos distributed throughout playback
+- System loops through all categories continuously
+
+11. Testing Process
+-----------------
+a) Initial Single Node Test
+   1. Start one slave node:
+      ```bash
+      python ho_slave.py --orientation hor --node 1
+      ```
+      This will:
+      - Initialize display in fullscreen
+      - Start OSC server on port 8001
+      - Wait for master connection
+
+   2. Run test master:
+      ```bash
+      python test_master.py
+      ```
+      This will:
+      - Connect to the slave node
+      - Play 3 test videos in sequence
+      - Show connection and playback status
+
+b) Expected Test Behavior
+   - Slave announces itself to master
+   - Master acknowledges connection
+   - Three videos play in sequence
+   - Each video plays completely before next starts
+   - Videos scale correctly to screen
+   - Clean transitions between videos
+
+c) Monitoring Test
+   - Check slave console for:
+     * Successful initialization
+     * Video loading messages
+     * Any playback errors
+   
+   - Check master console for:
+     * Slave connection confirmation
+     * Video sequence progress
+     * Timing information
+
+d) Common Test Issues
+   - Display not fullscreen: Check pygame initialization
+   - Video not found: Verify paths in ontology_map.json
+   - No connection: Check IP addresses and ports
+   - Black screen: Check video codec compatibility
+   - Poor performance: Monitor system resources
+
+e) Test Verification Points
+   1. Connection:
+      - Slave successfully announces to master
+      - Master creates correct client connection
+   
+   2. Video Playback:
+      - Videos load without errors
+      - Correct aspect ratio maintained
+      - Smooth playback at 30fps
+      - Clean start/stop transitions
+   
+   3. Timing:
+      - Videos play for correct duration
+      - No overlap between videos
+      - Proper cleanup between videos
+
+f) Next Testing Phase
+   After successful single-node test:
+   1. Test with two nodes of same orientation
+   2. Test with one node of each orientation
+   3. Test full four-node configuration
+   4. Test category transitions
+   5. Test long-running stability
+
+Note: Always test in a controlled environment first before deploying to the exhibition space. Monitor system resources and network stability during extended testing periods.
+
+Note: This system is designed for reliability and synchronization in a museum/exhibition environment where coordinated video playback across multiple displays is required. 

@@ -2,84 +2,123 @@
 === HYPEROBJECT VIDEO ONTOLOGY MAP ===
 
 Total Collection Statistics:
-├── Total Videos: 302
-└── Total Duration: 51.74 minutes
+├── Total Videos: 457
+└── Total Duration: 82.1 minutes
 
-❂ DEFORESTACION
-├── Videos: 36
-├── Duration: 379.44 seconds (6.32 minutes)
+❇ DEFORESTACION
+├── Videos: 40
+├── Duration: 433.93 seconds (7.23 minutes)
+├── Duration Min/Mean/Max: (10.54, 10.85, 12.25) seconds
+└── Orientations:
+    ├── vert: 28 videos (5.12 minutes)
+        ├── animated: 21 videos (3.69 minutes)
+        └── text: 7 videos (1.43 minutes)
+    └── hor: 12 videos (2.11 minutes)
+        ├── text: 9 videos (1.59 minutes)
+        └── animated: 3 videos (0.53 minutes)
+
+❇ DESAROLLO 
+├── Videos: 57
+├── Duration: 674.42 seconds (11.24 minutes)
+├── Duration Min/Mean/Max: (9.88, 11.83, 20.54) seconds
+└── Orientations:
+    ├── ver: 30 videos (6.12 minutes)
+        ├── animated: 22 videos (4.49 minutes)
+        └── text: 8 videos (1.63 minutes)
+    └── hor: 27 videos (5.12 minutes)
+        ├── animated: 19 videos (3.69 minutes)
+        └── text: 8 videos (1.43 minutes)
+
+❂ FABRICAS
+├── Videos: 23
+├── Duration: 253.1 seconds (4.22 minutes)
+├── Duration Min/Mean/Max: (10.54, 11.0, 12.25) seconds
+└── Orientations:
+    ├── ver: 11 videos (2.05 minutes)
+        ├── text: 4 videos (0.82 minutes)
+        └── animated: 7 videos (1.23 minutes)
+    └── hor: 12 videos (2.17 minutes)
+        ├── animated: 8 videos (1.41 minutes)
+        └── text: 4 videos (0.77 minutes)
+
+❇ GANADERIA
+├── Videos: 63
+├── Duration: 688.05 seconds (11.47 minutes)
+├── Duration Min/Mean/Max: (10.54, 10.92, 12.25) seconds
+└── Orientations:
+    ├── vert: 31 videos (5.7 minutes)
+        ├── animated: 23 videos (4.07 minutes)
+        └── text: 8 videos (1.63 minutes)
+    └── hor: 32 videos (5.77 minutes)
+        ├── animated: 24 videos (4.23 minutes)
+        └── text: 8 videos (1.53 minutes)
+
+❈ HURACAN
+├── Videos: 29
+├── Duration: 286.37 seconds (4.77 minutes)
+├── Duration Min/Mean/Max: (5.21, 9.87, 15.21) seconds
+└── Orientations:
+    ├── ver: 14 videos (2.34 minutes)
+        ├── animated: 9 videos (1.31 minutes)
+        └── text: 5 videos (1.02 minutes)
+    └── hor: 15 videos (2.44 minutes)
+        ├── text: 5 videos (0.96 minutes)
+        └── animated: 10 videos (1.48 minutes)
+
+※ MACROS-FUERZAS
+├── Videos: 18
+├── Duration: 189.72 seconds (3.16 minutes)
 ├── Duration Min/Mean/Max: (10.54, 10.54, 10.54) seconds
 └── Orientations:
-    ├── vert: 18 videos (3.16 minutes)
-    └── hor: 18 videos (3.16 minutes)
-
-✴ FABRICAS
-├── Videos: 15
-├── Duration: 158.1 seconds (2.63 minutes)
-├── Duration Min/Mean/Max: (10.54, 10.54, 10.54) seconds
-└── Orientations:
-    ├── ver: 7 videos (1.23 minutes)
-    └── hor: 8 videos (1.41 minutes)
-
-✴ WASTE POLLUTION
-├── Videos: 14
-├── Duration: 144.92 seconds (2.42 minutes)
-├── Duration Min/Mean/Max: (9.88, 10.35, 10.54) seconds
-└── Orientations:
-    ├── ver: 7 videos (1.21 minutes)
-    └── hor: 7 videos (1.21 minutes)
-
-❈ WILDFIRE
-├── Videos: 16
-├── Duration: 136.66 seconds (2.28 minutes)
-├── Duration Min/Mean/Max: (5.21, 8.54, 10.54) seconds
-└── Orientations:
-    ├── ver: 8 videos (1.14 minutes)
-    └── hor: 8 videos (1.14 minutes)
-
-❅ DESAROLLO 
-├── Videos: 22
-├── Duration: 289.94 seconds (4.83 minutes)
-├── Duration Min/Mean/Max: (9.88, 13.18, 20.54) seconds
-└── Orientations:
-    ├── ver: 12 videos (2.73 minutes)
-    └── hor: 10 videos (2.1 minutes)
-
-✿ GANADERIA
-├── Videos: 44
-├── Duration: 463.76 seconds (7.73 minutes)
-├── Duration Min/Mean/Max: (10.54, 10.54, 10.54) seconds
-└── Orientations:
-    ├── vert: 22 videos (3.86 minutes)
-    └── hor: 22 videos (3.86 minutes)
-
-✴ HURACAN
-├── Videos: 28
-├── Duration: 241.16 seconds (4.02 minutes)
-├── Duration Min/Mean/Max: (5.21, 8.61, 15.21) seconds
-└── Orientations:
-    ├── ver: 9 videos (1.31 minutes)
-    └── hor: 19 videos (2.7 minutes)
-
-✴ MACROS-FUERZAS
-├── Videos: 10
-├── Duration: 105.4 seconds (1.76 minutes)
-├── Duration Min/Mean/Max: (10.54, 10.54, 10.54) seconds
-└── Orientations:
+    ├── vert: 8 videos (1.41 minutes)
+        └── animated: 8 videos (1.41 minutes)
     └── hor: 10 videos (1.76 minutes)
+        └── animated: 10 videos (1.76 minutes)
 
-※ MINERIA
+❂ MINERIA
+├── Videos: 38
+├── Duration: 417.5 seconds (6.96 minutes)
+├── Duration Min/Mean/Max: (10.54, 10.99, 12.25) seconds
+└── Orientations:
+    ├── vert: 19 videos (3.51 minutes)
+        ├── text: 6 videos (1.23 minutes)
+        └── animated: 13 videos (2.28 minutes)
+    └── hor: 19 videos (3.45 minutes)
+        ├── animated: 12 videos (2.11 minutes)
+        └── text: 7 videos (1.34 minutes)
+
+✿ NATURALEZA-ANIMALES
+├── Videos: 114
+├── Duration: 1194.22 seconds (19.9 minutes)
+├── Duration Min/Mean/Max: (5.21, 10.48, 12.53) seconds
+└── Orientations:
+    ├── vert: 57 videos (10.34 minutes)
+        ├── animated: 45 videos (7.9 minutes)
+        └── text: 12 videos (2.44 minutes)
+    └── hor: 57 videos (9.56 minutes)
+        ├── animated: 46 videos (7.28 minutes)
+        └── text: 11 videos (2.28 minutes)
+
+❂ WASTE POLLUTION
+├── Videos: 49
+├── Duration: 533.11 seconds (8.89 minutes)
+├── Duration Min/Mean/Max: (9.88, 10.88, 12.25) seconds
+└── Orientations:
+    ├── ver: 24 videos (4.51 minutes)
+        ├── text: 11 videos (2.25 minutes)
+        └── animated: 13 videos (2.26 minutes)
+    └── hor: 25 videos (4.38 minutes)
+        ├── animated: 13 videos (2.26 minutes)
+        └── text: 12 videos (2.12 minutes)
+
+︎ WILDFIRE
 ├── Videos: 26
-├── Duration: 274.04 seconds (4.57 minutes)
-├── Duration Min/Mean/Max: (10.54, 10.54, 10.54) seconds
+├── Duration: 255.41 seconds (4.26 minutes)
+├── Duration Min/Mean/Max: (5.21, 9.82, 12.25) seconds
 └── Orientations:
-    ├── vert: 13 videos (2.28 minutes)
-    └── hor: 13 videos (2.28 minutes)
-
-❇ NATURALEZA-ANIMALES
-├── Videos: 91
-├── Duration: 911.17 seconds (15.19 minutes)
-├── Duration Min/Mean/Max: (5.21, 10.01, 10.54) seconds
-└── Orientations:
-    ├── vert: 45 videos (7.9 minutes)
-    └── hor: 46 videos (7.28 minutes)
+    ├── ver: 13 videos (2.16 minutes)
+        ├── animated: 8 videos (1.14 minutes)
+        └── text: 5 videos (1.02 minutes)
+    └── hor: 13 videos (2.1 minutes)
+        ├── animated: 8 videos (1.14 minutes)
+        └── text: 5 videos (0.96 minutes)
