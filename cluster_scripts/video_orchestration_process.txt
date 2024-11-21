@@ -3,9 +3,19 @@ Video Orchestration Process
 
 1. System Architecture
 ---------------------
-- 1 Master Node (192.168.1.200)
-- 2 Horizontal Slave Nodes (192.168.1.201, 192.168.1.202)
-- 2 Vertical Slave Nodes (192.168.1.203, 192.168.1.204)
+Two possible configurations:
+
+Configuration 1: master-ver1 (203)
+- Device 1 (master-ver1): 192.168.1.203 (runs master + ver1)
+- Device 2 (hor1): 192.168.1.201
+- Device 3 (ver2): 192.168.1.204
+- Device 4 (hor2): 192.168.1.202
+
+Configuration 2: master-hor1 (201)
+- Device 1 (master-hor1): 192.168.1.201 (runs master + hor1)
+- Device 2 (ver1): 192.168.1.203
+- Device 3 (ver2): 192.168.1.204
+- Device 4 (hor2): 192.168.1.202
 
 2. Initialization Process
 ------------------------
@@ -94,74 +104,17 @@ b) Slave Nodes:
 
 11. Testing Process
 -----------------
-a) Initial Single Node Test
-   1. Start one slave node:
-      ```bash
-      python ho_slave.py --orientation hor --node 1
-      ```
-      This will:
-      - Initialize display in fullscreen
-      - Start OSC server on port 8001
-      - Wait for master connection
+a) Initial Setup Test
+   1. Test network connectivity between all nodes
+   2. Test video playback on each node individually
+   3. Test master-slave communication
+   4. Test synchronized playback
 
-   2. Run test master:
-      ```bash
-      python test_master.py
-      ```
-      This will:
-      - Connect to the slave node
-      - Play 3 test videos in sequence
-      - Show connection and playback status
-
-b) Expected Test Behavior
-   - Slave announces itself to master
-   - Master acknowledges connection
-   - Three videos play in sequence
-   - Each video plays completely before next starts
-   - Videos scale correctly to screen
-   - Clean transitions between videos
-
-c) Monitoring Test
-   - Check slave console for:
-     * Successful initialization
-     * Video loading messages
-     * Any playback errors
-   
-   - Check master console for:
-     * Slave connection confirmation
-     * Video sequence progress
-     * Timing information
-
-d) Common Test Issues
-   - Display not fullscreen: Check pygame initialization
-   - Video not found: Verify paths in ontology_map.json
-   - No connection: Check IP addresses and ports
-   - Black screen: Check video codec compatibility
-   - Poor performance: Monitor system resources
-
-e) Test Verification Points
-   1. Connection:
-      - Slave successfully announces to master
-      - Master creates correct client connection
-   
-   2. Video Playback:
-      - Videos load without errors
-      - Correct aspect ratio maintained
-      - Smooth playback at 30fps
-      - Clean start/stop transitions
-   
-   3. Timing:
-      - Videos play for correct duration
-      - No overlap between videos
-      - Proper cleanup between videos
-
-f) Next Testing Phase
-   After successful single-node test:
-   1. Test with two nodes of same orientation
-   2. Test with one node of each orientation
-   3. Test full four-node configuration
-   4. Test category transitions
-   5. Test long-running stability
+b) Configuration Testing
+   - Test both possible configurations (master-ver1 and master-hor1)
+   - Verify all nodes can communicate with master
+   - Verify correct IP assignments
+   - Verify proper video orientation on each display
 
 Note: Always test in a controlled environment first before deploying to the exhibition space. Monitor system resources and network stability during extended testing periods.
 
