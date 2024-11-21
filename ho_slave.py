@@ -48,11 +48,24 @@ class VideoPlayer:
     def initialize_display(self):
         """Initialize pygame display (must be called from main thread)"""
         pygame.init()
+        
+        # Get current screen info
+        info = pygame.display.Info()
+        
+        # Set up display based on orientation with no frame
         if self.orientation == "hor":
-            self.screen = pygame.display.set_mode((1280, 768))
-        else:
-            self.screen = pygame.display.set_mode((768, 1280))
-        pygame.display.set_caption(f'Video Player - {self.orientation}')
+            self.screen = pygame.display.set_mode(
+                (1280, 768), 
+                pygame.FULLSCREEN | pygame.NOFRAME | pygame.HWSURFACE | pygame.DOUBLEBUF
+            )
+        else:  # vertical
+            self.screen = pygame.display.set_mode(
+                (768, 1280),
+                pygame.FULLSCREEN | pygame.NOFRAME | pygame.HWSURFACE | pygame.DOUBLEBUF
+            )
+            
+        # Hide mouse cursor
+        pygame.mouse.set_visible(False)
         
         # Create black surface for transitions
         self.black_surface = pygame.Surface(self.screen.get_rect().size)
@@ -181,8 +194,8 @@ class VideoPlayer:
 
 class SlaveNode:
     def __init__(self, orientation, ip_address):
-        print(f"Initializing slave node with orientation: {orientation}")
-        self.slave_id = str(uuid.uuid4())
+        print(f"Initializing slave node with orientation: {orientation} at IP: {ip_address}")
+        self.slave_id = ip_address.split('.')[-1]  # Use last octet of IP as ID
         self.orientation = orientation
         self.osc_server = OSCThreadServer()
         
@@ -196,11 +209,11 @@ class SlaveNode:
         # Bind OSC server
         try:
             self.sock = self.osc_server.listen(
-                address='0.0.0.0',
+                address=ip_address,  # Bind to specific IP
                 port=8001 if orientation == "hor" else 8002,
                 default=True
             )
-            print(f"OSC server listening on port {8001 if orientation == 'hor' else 8002}")
+            print(f"OSC server listening on {ip_address}:{8001 if orientation == 'hor' else 8002}")
         except Exception as e:
             print(f"Error binding OSC server: {e}")
             raise
@@ -209,24 +222,12 @@ class SlaveNode:
         self.osc_server.bind(b'/play', self.handle_play)
         self.osc_server.bind(b'/stop', self.handle_stop)
         
-        # Create client to respond to master
+        # Create client to respond to master (using master's IP)
         try:
-            self.client = OSCClient('127.0.0.1', 7000)
+            self.client = OSCClient('192.168.1.200', 7000)
             print("Created OSC client to connect to master")
         except Exception as e:
             print(f"Error creating OSC client: {e}")
-            raise
-        
-        # Announce presence to master
-        try:
-            print(f"Announcing presence to master with ID: {self.slave_id}")
-            self.client.send_message(
-                b'/slave/announce',
-                [self.slave_id.encode(), orientation.encode()]
-            )
-            print("Announcement sent to master")
-        except Exception as e:
-            print(f"Error announcing to master: {e}")
             raise
 
     def handle_play(self, video_name):
@@ -246,11 +247,15 @@ class SlaveNode:
 
 def main():
     args = parse_arguments()
-    print(f"Starting slave node with args: {args}")
+    
+    # Get IP address
+    ip_address = args.ip or get_default_ip(args.orientation, args.node)
+    print(f"Using IP address: {ip_address}")
     
     try:
         # Initialize slave node
-        slave = SlaveNode(args.orientation, args.ip or "127.0.0.1")
+        slave = SlaveNode(args.orientation, ip_address)
+        print(f"Slave node initialized with orientation {args.orientation} and node {args.node}")
         
         # Run main loop (this will block)
         slave.run()
@@ -258,6 +263,8 @@ def main():
         print("Shutting down slave node...")
     except Exception as e:
         print(f"Error in main: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         pygame.quit()
 

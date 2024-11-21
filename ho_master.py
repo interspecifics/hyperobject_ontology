@@ -6,16 +6,39 @@ from oscpy.client import OSCClient
 import time
 import random
 from collections import defaultdict
+import logging
+import os
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('/home/pi/video_player/logs/master.log'),
+        logging.StreamHandler()
+    ]
+)
 
 class VideoOrchestrator:
     def __init__(self):
+        logging.info("Initializing Video Orchestrator")
+        
         # Load video metadata
-        with open('ontology_map.json', 'r') as f:
-            self.videos = json.load(f)
+        try:
+            with open('/home/pi/video_player/ontology_map.json', 'r') as f:
+                self.videos = json.load(f)
+            logging.info("Loaded video metadata successfully")
+        except Exception as e:
+            logging.error(f"Failed to load video metadata: {e}")
+            raise
             
         # Initialize OSC server
         self.osc_server = OSCThreadServer()
-        self.sock = self.osc_server.listen(address='0.0.0.0', port=7000, default=True)
+        self.sock = self.osc_server.listen(
+            address='192.168.1.200',  # Master's IP
+            port=7000,
+            default=True
+        )
         
         # Track connected slaves
         self.slaves = {
@@ -29,17 +52,21 @@ class VideoOrchestrator:
         # Create clients dict for slaves
         self.slave_clients = {}
         
+        logging.info("Video Orchestrator initialized")
+
     def handle_slave_announce(self, slave_id, orientation):
+        """Handle slave node announcements"""
         slave_id = slave_id.decode()
         orientation = orientation.decode()
-        
-        print(f"New slave announced: {slave_id} ({orientation})")
+        logging.info(f"Slave announced: {slave_id} ({orientation})")
         
         if slave_id not in self.slaves[orientation]:
             self.slaves[orientation].append(slave_id)
-            # Create client for this slave
+            # Create client for this slave using its ID to determine IP
+            ip = f"192.168.1.{slave_id}"
             port = 8001 if orientation == "hor" else 8002
-            self.slave_clients[slave_id] = OSCClient('192.168.1.'+slave_id.split('-')[0], port)
+            self.slave_clients[slave_id] = OSCClient(ip, port)
+            logging.info(f"Created client for slave at {ip}:{port}")
 
     def organize_videos_by_type(self, category, orientation):
         """Split videos into animated and text types for a given category and orientation"""
@@ -150,8 +177,16 @@ class VideoOrchestrator:
             print("Shutting down orchestrator...")
 
 def main():
-    orchestrator = VideoOrchestrator()
-    orchestrator.run()
+    try:
+        orchestrator = VideoOrchestrator()
+        logging.info("Starting Video Orchestrator")
+        orchestrator.run()
+    except KeyboardInterrupt:
+        logging.info("Shutting down orchestrator...")
+    except Exception as e:
+        logging.error(f"Error in main: {e}", exc_info=True)
 
 if __name__ == "__main__":
+    # Ensure log directory exists
+    os.makedirs('/home/pi/video_player/logs', exist_ok=True)
     main()
