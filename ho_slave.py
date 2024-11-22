@@ -4,7 +4,7 @@ import pygame
 from ffpyplayer.player import MediaPlayer
 from oscpy.server import OSCThreadServer
 import argparse
-from queue import Queue
+from queue import Queue, Empty
 from threading import Thread, Event
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -29,7 +29,6 @@ class SlavePlayer:
         self.stop_event = Event()
         self.frame_queue = Queue(maxsize=4)
         self.video_queue = Queue()
-        self.video_finished = Event()
         
         # Filter videos for this orientation
         self.available_videos = {
@@ -77,18 +76,12 @@ class SlavePlayer:
                 if event.type == pygame.QUIT:
                     return
 
-            # If current video is finished, check for next video
-            if self.video_finished.is_set():
-                self.video_finished.clear()
-                self.screen.blit(self.black_surface, (0, 0))
-                pygame.display.flip()
-
             # Check for new video when no video is playing
             if self.current_video is None:
                 try:
                     video_name = self.video_queue.get_nowait()
                     self._start_video(video_name)
-                except Queue.Empty:
+                except Empty:
                     pass
                 
             # Display frames if available
@@ -96,11 +89,10 @@ class SlavePlayer:
                 frame_data = self.frame_queue.get_nowait()
                 if frame_data == "EOF":
                     self.stop_video()
-                    self.video_finished.set()
                 elif isinstance(frame_data, pygame.Surface):
                     self.screen.blit(frame_data, (0, 0))
                     pygame.display.flip()
-            except Queue.Empty:
+            except Empty:
                 pass
                 
             # Use video-specific FPS if available
@@ -122,7 +114,6 @@ class SlavePlayer:
         try:
             self.current_video = self.available_videos[video_name]
             self.stop_event.clear()
-            self.video_finished.clear()
             self.player = MediaPlayer(self.current_video['path'])
             
             # Start frame fetching thread
