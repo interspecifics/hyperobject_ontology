@@ -31,28 +31,9 @@ class TestPlayer:
         self.command_queue = Queue()
         self.video_finished = Event()
         
-        # Filter and select 5 random videos for the orientation
-        orientation_videos = [v for v in videos if v['orientation'].lower() == orientation]
-        self.test_videos = random.sample(orientation_videos, min(5, len(orientation_videos)))
-        
-        # Print video information and get max dimensions
-        print(f"\nSelected {len(self.test_videos)} videos for testing:")
-        max_width = 0
-        max_height = 0
-        for video in self.test_videos:
-            print(f"\nVideo: {video['name']}")
-            print(f"  Path: {video['path']}")
-            print(f"  Type: {video['video_type']}")
-            print(f"  FPS: {video.get('fps', 30)}")
-            if os.path.exists(video['path']):
-                size = os.path.getsize(video['path']) / (1024 * 1024)
-                print(f"  Size: {size:.2f} MB")
-                print(f"  Status: File exists")
-                # Track maximum dimensions
-                max_width = max(max_width, video.get('width', 0))
-                max_height = max(max_height, video.get('height', 0))
-            else:
-                print(f"  Status: FILE NOT FOUND")
+        # Get unique categories in alphabetical order
+        self.categories = sorted(set(video['category'] for video in videos))
+        print(f"\nFound {len(self.categories)} categories: {self.categories}")
         
         # Initialize pygame display
         pygame.init()
@@ -83,56 +64,87 @@ class TestPlayer:
         
         print(f"\nFinal display size: {self.screen.get_width()}x{self.screen.get_height()}")
 
+    def prepare_category_playlist(self, category):
+        """Prepare a playlist for a category that alternates between animated and text videos"""
+        # Filter videos for this category and orientation
+        category_videos = [v for v in videos if v['category'] == category and v['orientation'].lower() == self.orientation]
+        
+        # Separate animated and text videos
+        animated_videos = [v for v in category_videos if v['video_type'] == 'animated']
+        text_videos = [v for v in category_videos if v['video_type'] == 'text']
+        
+        # Shuffle both lists
+        random.shuffle(animated_videos)
+        random.shuffle(text_videos)
+        
+        # Create playlist alternating between animated and text
+        playlist = []
+        text_index = 0
+        
+        for i, animated in enumerate(animated_videos):
+            playlist.append(animated)
+            # Insert a text video after every 2-3 animated videos
+            if i % 3 == 1 and text_index < len(text_videos):  # Adjust this number to change frequency
+                playlist.append(text_videos[text_index])
+                text_index += 1
+        
+        return playlist
+
     def run_test(self):
-        """Play all test videos in sequence"""
+        """Play videos from all categories"""
         print("\n=== Starting Video Test Sequence ===")
         
-        for video in self.test_videos:
-            print(f"\nPlaying: {video['name']}")
+        for category in self.categories:
+            print(f"\n=== Testing Category: {category} ===")
+            playlist = self.prepare_category_playlist(category)
             
-            # Create MediaPlayer
-            try:
-                self.current_video = video
-                self.player = MediaPlayer(video['path'])
+            print(f"Prepared playlist with {len(playlist)} videos")
+            for video in playlist:
+                print(f"\nPlaying: {video['name']}")
+                print(f"Type: {video['video_type']}")
                 
-                # Start frame fetching thread
-                fetch_thread = Thread(target=self._fetch_frames)
-                fetch_thread.daemon = True
-                fetch_thread.start()
-                
-                # Main display loop for this video
-                clock = pygame.time.Clock()
-                while not self.stop_event.is_set():
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            return
+                try:
+                    self.current_video = video
+                    self.player = MediaPlayer(video['path'])
                     
-                    try:
-                        frame_data = self.frame_queue.get(timeout=0.1)
-                        if frame_data == "EOF":
-                            break
-                        elif isinstance(frame_data, pygame.Surface):
-                            self.screen.blit(frame_data, (0, 0))
-                            pygame.display.flip()
-                    except:
-                        pass
+                    # Start frame fetching thread
+                    fetch_thread = Thread(target=self._fetch_frames)
+                    fetch_thread.daemon = True
+                    fetch_thread.start()
                     
-                    clock.tick(video.get('fps', 30))
-                
-                # Clean up before next video
-                self.stop_event.set()
-                if self.player:
-                    self.player.close_player()
-                    self.player = None
-                self.stop_event.clear()
-                
-                # Show black screen between videos
-                self.screen.blit(self.black_surface, (0, 0))
-                pygame.display.flip()
-                
-            except Exception as e:
-                print(f"Error playing video: {e}")
-                continue
+                    # Main display loop for this video
+                    clock = pygame.time.Clock()
+                    while not self.stop_event.is_set():
+                        for event in pygame.event.get():
+                            if event.type == pygame.QUIT:
+                                return
+                        
+                        try:
+                            frame_data = self.frame_queue.get(timeout=0.1)
+                            if frame_data == "EOF":
+                                break
+                            elif isinstance(frame_data, pygame.Surface):
+                                self.screen.blit(frame_data, (0, 0))
+                                pygame.display.flip()
+                        except:
+                            pass
+                        
+                        clock.tick(video.get('fps', 30))
+                    
+                    # Clean up before next video
+                    self.stop_event.set()
+                    if self.player:
+                        self.player.close_player()
+                        self.player = None
+                    self.stop_event.clear()
+                    
+                    # Show black screen between videos
+                    self.screen.blit(self.black_surface, (0, 0))
+                    pygame.display.flip()
+                    
+                except Exception as e:
+                    print(f"Error playing video: {e}")
+                    continue
 
     def _fetch_frames(self):
         """Fetch and convert frames in separate thread"""
