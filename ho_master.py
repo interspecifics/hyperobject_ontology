@@ -1,107 +1,52 @@
 import json
-import pygame
-import threading
-from oscpy.server import OSCThreadServer
-from oscpy.client import OSCClient
-import time
-import random
-from collections import defaultdict
-import logging
 import os
-
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/home/pi/video_player/logs/master.log'),
-        logging.StreamHandler()
-    ]
-)
-
-def get_slave_port(orientation, node):
-    """Get the correct port based on orientation and node number"""
-    if orientation == "hor":
-        return 8001 if node == 1 else 8002  # hor1: 8001, hor2: 8002
-    else:
-        return 8003 if node == 1 else 8004  # ver1: 8003, ver2: 8004
+import time
+from oscpy.client import OSCClient
+import random
+import subprocess
+import argparse
+from queue import Queue
+from threading import Thread, Event
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 def get_absolute_video_path(relative_path):
     """Convert relative video path to absolute path"""
     base_dir = '/home/pi/video_player'
     return os.path.join(base_dir, relative_path)
 
-class VideoOrchestrator:
-    def __init__(self):
-        logging.info("Initializing Video Orchestrator")
-        
-        # Load video metadata
-        try:
-            with open('/home/pi/video_player/ontology_map.json', 'r') as f:
-                self.videos = json.load(f)
-                # Convert all video paths
-                for video in self.videos:
-                    video['path'] = get_absolute_video_path(video['path'])
-            logging.info("Loaded video metadata successfully")
-        except Exception as e:
-            logging.error(f"Failed to load video metadata: {e}")
-            raise
-            
-        # Initialize OSC server
-        try:
-            self.osc_server = OSCThreadServer()
-            self.sock = self.osc_server.listen(
-                address='0.0.0.0',
-                port=7000,
-                default=True
-            )
-            logging.info("OSC server listening on port 7000")
-        except Exception as e:
-            logging.error(f"Error initializing OSC server: {e}")
-            raise
+# Load metadata
+with open('/home/pi/video_player/ontology_map.json', 'r') as f:
+    videos = json.load(f)
+    for video in videos:
+        video['path'] = get_absolute_video_path(video['path'])
 
-        # Add a running flag
-        self.running = True
+class MasterNode:
+    def __init__(self, local_slave):
+        print("\n=== Master Node Initialization ===")
+        self.local_slave = local_slave  # 'hor1', 'ver1', etc.
         
-        # Track connected slaves
+        # Get unique categories in alphabetical order
+        self.categories = sorted(set(video['category'] for video in videos))
+        print(f"\nFound {len(self.categories)} categories: {self.categories}")
+        
+        # Initialize OSC clients for each slave
         self.slaves = {
-            'hor': [],  # List of horizontal display slaves
-            'ver': []   # List of vertical display slaves
+            'hor1': OSCClient('127.0.0.1' if local_slave == 'hor1' else '192.168.1.201', 8001),
+            'hor2': OSCClient('192.168.1.202', 8002),
+            'ver1': OSCClient('127.0.0.1' if local_slave == 'ver1' else '192.168.1.203', 8003),
+            'ver2': OSCClient('192.168.1.204', 8004)
         }
         
-        # Register handlers
-        self.osc_server.bind(b'/slave/announce', self.handle_slave_announce)
-        
-        # Create clients dict for slaves
-        self.slave_clients = {}
-        
-        logging.info("Video Orchestrator initialized")
-
-    def handle_slave_announce(self, slave_id, orientation):
-        """Handle slave node announcements"""
-        try:
-            slave_id = slave_id.decode()
-            orientation = orientation.decode()
-            logging.info(f"Slave announced: {slave_id} ({orientation})")
-            
-            if slave_id not in self.slaves[orientation]:
-                self.slaves[orientation].append(slave_id)
-                # Create client for this slave using its ID to determine IP and port
-                ip = f"192.168.1.{slave_id}"
-                # Determine if this is node 1 or 2 based on IP
-                node = 1 if slave_id in ['201', '203'] else 2
-                port = get_slave_port(orientation, node)
-                self.slave_clients[slave_id] = OSCClient(ip, port)
-                logging.info(f"Created client for slave at {ip}:{port}")
-                logging.info(f"Current slaves: hor={self.slaves['hor']}, ver={self.slaves['ver']}")
-        except Exception as e:
-            logging.error(f"Error in handle_slave_announce: {e}", exc_info=True)
-            raise
+        print("\nInitialized OSC clients:")
+        for slave, client in self.slaves.items():
+            print(f"  {slave}: {client._address}:{client._port}")
 
     def organize_videos_by_type(self, category, orientation):
-        """Split videos into animated and text types for a given category and orientation"""
-        category_videos = [v for v in self.videos 
-                         if v['category'] == category and v['orientation'] == orientation]
+        """Separate videos by type for a given category and orientation"""
+        category_videos = [v for v in videos 
+                         if v['category'] == category 
+                         and v['orientation'].lower() == orientation]
         
         animated = [v for v in category_videos if v['video_type'] == 'animated']
         text = [v for v in category_videos if v['video_type'] == 'text']
@@ -120,107 +65,97 @@ class VideoOrchestrator:
         random.shuffle(ver_animated)
         random.shuffle(ver_text)
         
-        # Calculate number of slots needed
-        total_slots = max(
-            len(hor_animated) // 2 + len(hor_text),
-            len(ver_animated) // 2 + len(ver_text)
-        )
-        
-        # Initialize playlists for each node
+        # Initialize playlists
         playlists = {
-            'hor': [[] for _ in range(2)],  # 2 horizontal nodes
-            'ver': [[] for _ in range(2)]   # 2 vertical nodes
+            'hor1': [], 'hor2': [],
+            'ver1': [], 'ver2': []
         }
         
-        # Distribute animated videos
+        # Distribute animated videos between node pairs
         for i, video in enumerate(hor_animated):
-            node_idx = i % 2
-            playlists['hor'][node_idx].append(video)
+            node = 'hor1' if i % 2 == 0 else 'hor2'
+            playlists[node].append(video)
             
         for i, video in enumerate(ver_animated):
-            node_idx = i % 2
-            playlists['ver'][node_idx].append(video)
+            node = 'ver1' if i % 2 == 0 else 'ver2'
+            playlists[node].append(video)
         
-        # Insert text videos at coordinated positions
-        text_interval = max(3, total_slots // (len(hor_text) + len(ver_text)))
-        current_pos = text_interval
+        # Insert text videos at intervals (never simultaneously)
+        text_interval = 3  # Show text video after every 3 animated videos
         
-        for text_video in hor_text:
-            if current_pos < len(playlists['hor'][0]):
-                playlists['hor'][0].insert(current_pos, text_video)
-                playlists['hor'][1].insert(current_pos, None)  # Other node waits
-                current_pos += text_interval
-                
-        current_pos = text_interval + text_interval // 2  # Offset for vertical nodes
-        for text_video in ver_text:
-            if current_pos < len(playlists['ver'][0]):
-                playlists['ver'][0].insert(current_pos, text_video)
-                playlists['ver'][1].insert(current_pos, None)  # Other node waits
-                current_pos += text_interval
+        # Add text videos to horizontal nodes
+        for i, text_video in enumerate(hor_text):
+            pos = (i + 1) * text_interval
+            if pos < len(playlists['hor1']):
+                playlists['hor1'].insert(pos, text_video)
+                playlists['hor2'].insert(pos, None)  # Other node waits
+        
+        # Add text videos to vertical nodes (offset from horizontal)
+        for i, text_video in enumerate(ver_text):
+            pos = (i + 1) * text_interval + 2  # Offset to avoid simultaneous text videos
+            if pos < len(playlists['ver1']):
+                playlists['ver1'].insert(pos, text_video)
+                playlists['ver2'].insert(pos, None)  # Other node waits
         
         return playlists
 
-    def play_category(self, category):
-        """Orchestrate playing videos from a category across all slaves"""
-        playlists = self.create_synchronized_playlist(category)
-        
-        # Send playlists to each slave
-        for orientation in ['hor', 'ver']:
-            for slave_idx, slave_id in enumerate(self.slaves[orientation]):
-                playlist = playlists[orientation][slave_idx]
-                for video in playlist:
-                    if video is not None:  # Skip None entries (wait slots)
-                        self.slave_clients[slave_id].send_message(
-                            b'/play',
-                            [video['name'].encode()]
-                        )
-                        # Wait for video duration
-                        time.sleep(video['duration'])
-                    else:
-                        # Wait for average video duration when None
-                        time.sleep(10)  # Default wait time
+    def play_video(self, node, video):
+        """Send play command to a specific node"""
+        if video is None:
+            return
+        try:
+            self.slaves[node].send_message(b'/play', [video['name'].encode()])
+            print(f"Sent play command to {node}: {video['name']}")
+        except Exception as e:
+            print(f"Error sending play command to {node}: {e}")
 
     def run(self):
-        """Main loop to orchestrate video playback"""
-        categories = list(set(v['category'] for v in self.videos))
+        """Main execution loop"""
+        print("\n=== Starting Video Playback ===")
         
         try:
-            while self.running:  # Use running flag instead of True
-                # Wait for slaves to connect
-                if not (self.slaves['hor'] and self.slaves['ver']):
-                    logging.info("Waiting for slaves to connect...")
-                    time.sleep(5)
-                    continue
+            # Process each category in alphabetical order
+            for category in self.categories:
+                print(f"\n=== Processing Category: {category} ===")
                 
-                # Play through categories
-                for category in categories:
-                    logging.info(f"Playing category: {category}")
-                    self.play_category(category)
-                    # Wait for longest video duration in category
-                    max_duration = max(
-                        v['duration'] for v in self.videos 
-                        if v['category'] == category
-                    )
-                    time.sleep(max_duration)
+                # Create synchronized playlists for this category
+                playlists = self.create_synchronized_playlist(category)
+                
+                # Get maximum playlist length
+                max_length = max(len(playlist) for playlist in playlists.values())
+                
+                # Play videos from playlists
+                for i in range(max_length):
+                    for node in ['hor1', 'hor2', 'ver1', 'ver2']:
+                        if i < len(playlists[node]):
+                            video = playlists[node][i]
+                            if video:
+                                self.play_video(node, video)
                     
+                    # Wait for videos to finish (approximate)
+                    # In a real implementation, you might want to add synchronization mechanisms
+                    time.sleep(12)  # Adjust based on typical video duration
+                
+                print(f"Finished category: {category}")
+                
         except KeyboardInterrupt:
-            logging.info("Shutting down orchestrator...")
-            self.running = False
+            print("\nPlayback interrupted by user")
         except Exception as e:
-            logging.error(f"Error in main loop: {e}", exc_info=True)
-            self.running = False
+            print(f"\nError during playback: {e}")
+            raise
 
 def main():
+    parser = argparse.ArgumentParser(description='Video Player Master Node')
+    parser.add_argument('--local-slave', required=True, 
+                      choices=['hor1', 'ver1'],
+                      help='Which slave node runs on this device')
+    args = parser.parse_args()
+    
     try:
-        orchestrator = VideoOrchestrator()
-        logging.info("Starting Video Orchestrator")
-        orchestrator.run()
-    except KeyboardInterrupt:
-        logging.info("Shutting down orchestrator...")
+        master = MasterNode(args.local_slave)
+        master.run()
     except Exception as e:
-        logging.error(f"Error in main: {e}", exc_info=True)
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
-    # Ensure log directory exists
-    os.makedirs('/home/pi/video_player/logs', exist_ok=True)
     main()

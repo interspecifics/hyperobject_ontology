@@ -1,122 +1,146 @@
 # Video Player Cluster Setup Instructions
 
-This guide explains how to set up and run the video player cluster using 4 Raspberry Pi devices.
+This guide explains how to set up and run the synchronized video player cluster using 4 Raspberry Pi devices.
 
-## Network Configuration
+## System Architecture
 
-The cluster uses static IP addresses in the 192.168.1.2xx range. There are two possible configurations:
+The system consists of:
+- 1 master node (which also runs a slave)
+- 3 additional slave nodes
+- 2 horizontal displays (1920x1080)
+- 2 vertical displays (768x1280 or 1080x1920)
 
-### Configuration 1: master-ver1 (203)
-- Device 1 (master-ver1): 192.168.1.203 (runs master + ver1)
-- Device 2 (hor1): 192.168.1.201
-- Device 3 (ver2): 192.168.1.204
-- Device 4 (hor2): 192.168.1.202
+### Network Configuration
 
-### Configuration 2: master-hor1 (201)
-- Device 1 (master-hor1): 192.168.1.201 (runs master + hor1)
-- Device 2 (ver1): 192.168.1.203
-- Device 3 (ver2): 192.168.1.204
-- Device 4 (hor2): 192.168.1.202
+The cluster uses fixed IP addresses and ports:
+
+| Node    | IP Address      | Port | Description                    |
+|---------|----------------|------|--------------------------------|
+| hor1    | 192.168.1.201  | 8001 | Horizontal display 1          |
+| hor2    | 192.168.1.202  | 8002 | Horizontal display 2          |
+| ver1    | 192.168.1.203  | 8003 | Vertical display 1           |
+| ver2    | 192.168.1.204  | 8004 | Vertical display 2           |
+
+The master node typically runs on the same device as either hor1 or ver1.
 
 ## Installation
 
-1. Copy all files to /home/pi/video_player/
+1. Copy all files to /home/pi/video_player/ on each device:
+```bash
+scp -r * pi@192.168.1.xxx:/home/pi/video_player/
+```
 
 2. Make scripts executable:
 ```bash
 chmod +x /home/pi/video_player/cluster_scripts/*.sh
 ```
 
-3. Set up environment based on device role:
-
-For Configuration 1 (master-ver1):
-```bash
-# On Device 1 (master + ver1):
-sudo ./cluster_scripts/setup_environment.sh master-ver1
-
-# On Device 2 (hor1):
-sudo ./cluster_scripts/setup_environment.sh hor1
-
-# On Device 3 (ver2):
-sudo ./cluster_scripts/setup_environment.sh ver2
-
-# On Device 4 (hor2):
-sudo ./cluster_scripts/setup_environment.sh hor2
-```
-
-For Configuration 2 (master-hor1):
-```bash
-# On Device 1 (master + hor1):
-sudo ./cluster_scripts/setup_environment.sh master-hor1
-
-# On Device 2 (ver1):
-sudo ./cluster_scripts/setup_environment.sh ver1
-
-# On Device 3 (ver2):
-sudo ./cluster_scripts/setup_environment.sh ver2
-
-# On Device 4 (hor2):
-sudo ./cluster_scripts/setup_environment.sh hor2
-```
-
-4. Run the installation script on each device:
+3. Install dependencies on each device:
 ```bash
 ./cluster_scripts/install_dependencies.sh
 ```
 
-5. Reboot all devices:
+## Configuration
+
+Each device needs to be configured based on its role:
+
+### Master + Slave Node (hor1)
 ```bash
-sudo reboot
+# On 192.168.1.201
+python3 ho_master.py --local-slave hor1
+python3 ho_slave.py --orientation hor --node 1
 ```
 
-The video player will start automatically after reboot on each device.
-
-## Manual Control
-
-To stop the video player:
+### Slave Nodes
 ```bash
-pkill -f "python3 ho_"
+# On 192.168.1.202 (hor2)
+python3 ho_slave.py --orientation hor --node 2
+
+# On 192.168.1.203 (ver1)
+python3 ho_slave.py --orientation ver --node 1
+
+# On 192.168.1.204 (ver2)
+python3 ho_slave.py --orientation ver --node 2
 ```
 
-To start manually:
-```bash
-/home/pi/video_player/cluster_scripts/start_node.sh $NODE_TYPE
-```
+## Operation
+
+The system will:
+1. Process categories in alphabetical order
+2. Play animated videos distributed across node pairs
+3. Insert text videos at intervals (never simultaneously)
+4. Maintain synchronization across all displays
+
+### Video Types
+- Animated videos are distributed between node pairs
+- Text videos are shown on one node while its pair waits
+- No two text videos play simultaneously across the system
 
 ## Testing
 
 To test a single node:
 ```bash
-# On master node
-python3 /home/pi/video_player/test_master.py
+python3 test_slave.py --orientation [hor|ver]
 ```
+
+This will play through all categories with proper video type alternation.
 
 ## Troubleshooting
 
-1. Check node connectivity:
+1. Check network connectivity:
 ```bash
-# From any device
 ping 192.168.1.201  # hor1
 ping 192.168.1.202  # hor2
 ping 192.168.1.203  # ver1
 ping 192.168.1.204  # ver2
 ```
 
-2. View logs:
+2. Verify OSC communication:
 ```bash
-# On master node:
-tail -f /home/pi/video_player/logs/master.log
-tail -f /home/pi/video_player/logs/horizontal1.log  # or vertical1.log
-
-# On other nodes:
-tail -f /home/pi/video_player/logs/horizontal1.log
-tail -f /home/pi/video_player/logs/vertical1.log
-tail -f /home/pi/video_player/logs/horizontal2.log
-tail -f /home/pi/video_player/logs/vertical2.log
+# On slave nodes
+netstat -an | grep 800[1-4]
 ```
 
-3. Check virtual environment:
+3. Common issues:
+- Black screen: Check if pygame is in fullscreen mode
+- No video: Verify video paths in ontology_map.json
+- Desynchronization: Check network latency between nodes
+
+4. Restart a node:
 ```bash
-source /home/pi/video_player/venv/bin/activate
-python3 -c "import pygame; import ffpyplayer; import oscpy"
+# Stop all python processes
+pkill -f "python3 ho_"
+
+# Restart slave
+python3 ho_slave.py --orientation [hor|ver] --node [1|2]
+
+# Restart master (if applicable)
+python3 ho_master.py --local-slave [hor1|ver1]
+```
+
+## File Structure
+```
+/home/pi/video_player/
+├── ho_master.py      # Master node controller
+├── ho_slave.py       # Slave node video player
+├── test_slave.py     # Single node test script
+├── ontology_map.json # Video metadata
+└── cluster_scripts/  # Setup and management scripts
+```
+
+## Logs
+
+Logs are written to:
+```
+/home/pi/video_player/logs/
+├── master.log
+├── horizontal1.log
+├── horizontal2.log
+├── vertical1.log
+└── vertical2.log
+```
+
+Monitor logs in real-time:
+```bash
+tail -f /home/pi/video_player/logs/*.log
 ```
