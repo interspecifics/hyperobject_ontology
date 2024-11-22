@@ -54,10 +54,8 @@ class VideoPlayer:
         
     def initialize_display(self):
         """Initialize pygame display (must be called from main thread)"""
+        os.environ['SDL_VIDEODRIVER'] = 'x11'  # Force X11 driver
         pygame.init()
-        
-        # Get current screen info
-        info = pygame.display.Info()
         
         # Set up display based on orientation with no frame
         if self.orientation == "hor":
@@ -216,11 +214,11 @@ class SlaveNode:
         # Bind OSC server
         try:
             self.sock = self.osc_server.listen(
-                address=ip_address,  # Bind to specific IP
+                address='0.0.0.0',  # Listen on all interfaces instead of specific IP
                 port=8001 if orientation == "hor" else 8002,
                 default=True
             )
-            print(f"OSC server listening on {ip_address}:{8001 if orientation == 'hor' else 8002}")
+            print(f"OSC server listening on port {8001 if orientation == 'hor' else 8002}")
         except Exception as e:
             print(f"Error binding OSC server: {e}")
             raise
@@ -253,7 +251,7 @@ class SlaveNode:
         """Handle incoming play command"""
         video_name = video_name.decode()
         print(f"Received play command for: {video_name}")
-        self.video_player.play_video(video_name)
+        self.video_queue.put(video_name)  # Use queue instead of direct playback
 
     def handle_stop(self):
         """Handle stop command"""
@@ -265,7 +263,9 @@ class SlaveNode:
         print("Starting main loop...")
         try:
             # Run the video player's main loop
-            self.video_player.main_loop()
+            while True:
+                self.video_player.main_loop()
+                time.sleep(0.1)  # Add small sleep to prevent CPU hogging
         except KeyboardInterrupt:
             print("Received keyboard interrupt")
         except Exception as e:
