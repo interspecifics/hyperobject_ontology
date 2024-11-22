@@ -1,4 +1,3 @@
-import socket
 import json
 import os
 import pygame
@@ -15,19 +14,15 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 def get_absolute_video_path(relative_path):
     """Convert relative video path to absolute path"""
-    base_dir = '/home/pi/video_player'  # Base directory where the project is installed
+    relative_path = relative_path.replace('Videos_hd_final', 'Videos_hd_finales')
+    base_dir = '/home/pi/video_player'
     return os.path.join(base_dir, relative_path)
 
-# Load metadata and convert paths to absolute
-try:
-    with open('/home/pi/video_player/ontology_map.json', 'r') as f:
-        videos = json.load(f)
-        # Convert all video paths to absolute paths
-        for video in videos:
-            video['path'] = get_absolute_video_path(video['path'])
-except Exception as e:
-    print(f"Error loading video metadata: {e}")
-    raise
+# Load metadata
+with open('/home/pi/video_player/ontology_map.json', 'r') as f:
+    videos = json.load(f)
+    for video in videos:
+        video['path'] = get_absolute_video_path(video['path'])
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Video Player Slave Node')
@@ -77,13 +72,10 @@ class VideoPlayer:
             print(f"  Path: {video['path']}")
             print(f"  Type: {video['video_type']}")
             print(f"  FPS: {video.get('fps', 30)}")
-            print(f"  Duration: {video.get('duration', 'unknown')} seconds")
-            # Verify file exists
             if os.path.exists(video['path']):
-                print(f"  Status: File exists")
-                # Get file size
-                size = os.path.getsize(video['path']) / (1024 * 1024)  # Convert to MB
+                size = os.path.getsize(video['path']) / (1024 * 1024)
                 print(f"  Size: {size:.2f} MB")
+                print(f"  Status: File exists")
             else:
                 print(f"  Status: FILE NOT FOUND")
         
@@ -92,30 +84,36 @@ class VideoPlayer:
         # Screen setup will be done in main thread
         self.screen = None
         self.black_surface = None
-        
+
     def initialize_display(self):
         """Initialize pygame display (must be called from main thread)"""
-        # Simple pygame initialization
         pygame.init()
-        
-        # Set up display based on orientation
         if self.orientation == "hor":
             self.screen = pygame.display.set_mode(
-                (1280, 768), 
+                (1920, 1080),
                 pygame.FULLSCREEN | pygame.NOFRAME
             )
-        else:  # vertical
-            self.screen = pygame.display.set_mode(
-                (768, 1280),
-                pygame.FULLSCREEN | pygame.NOFRAME
-            )
-            
-        # Hide mouse cursor
+        else:
+            # For vertical, try the smaller resolution first
+            try:
+                self.screen = pygame.display.set_mode(
+                    (768, 1280),
+                    pygame.FULLSCREEN | pygame.NOFRAME
+                )
+            except pygame.error:
+                print("Failed to set 768x1280, trying 1080x1920...")
+                self.screen = pygame.display.set_mode(
+                    (1080, 1920),
+                    pygame.FULLSCREEN | pygame.NOFRAME
+                )
+        
         pygame.mouse.set_visible(False)
         
         # Create black surface for transitions
         self.black_surface = pygame.Surface(self.screen.get_rect().size)
         self.black_surface.fill((0, 0, 0))
+        
+        print(f"\nFinal display size: {self.screen.get_width()}x{self.screen.get_height()}")
 
     def main_loop(self):
         """Main loop that runs in the main thread"""

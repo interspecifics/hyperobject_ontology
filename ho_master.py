@@ -26,6 +26,12 @@ def get_slave_port(orientation, node):
     else:
         return 8003 if node == 1 else 8004  # ver1: 8003, ver2: 8004
 
+def get_absolute_video_path(relative_path):
+    """Convert relative video path to absolute path"""
+    relative_path = relative_path.replace('Videos_hd_final', 'Videos_hd_finales')
+    base_dir = '/home/pi/video_player'
+    return os.path.join(base_dir, relative_path)
+
 class VideoOrchestrator:
     def __init__(self):
         logging.info("Initializing Video Orchestrator")
@@ -34,6 +40,9 @@ class VideoOrchestrator:
         try:
             with open('/home/pi/video_player/ontology_map.json', 'r') as f:
                 self.videos = json.load(f)
+                # Convert all video paths
+                for video in self.videos:
+                    video['path'] = get_absolute_video_path(video['path'])
             logging.info("Loaded video metadata successfully")
         except Exception as e:
             logging.error(f"Failed to load video metadata: {e}")
