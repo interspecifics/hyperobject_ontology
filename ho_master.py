@@ -40,12 +40,20 @@ class VideoOrchestrator:
             raise
             
         # Initialize OSC server
-        self.osc_server = OSCThreadServer()
-        self.sock = self.osc_server.listen(
-            address='0.0.0.0',  # Changed from 192.168.1.200 to listen on all interfaces
-            port=7000,
-            default=True
-        )
+        try:
+            self.osc_server = OSCThreadServer()
+            self.sock = self.osc_server.listen(
+                address='0.0.0.0',
+                port=7000,
+                default=True
+            )
+            logging.info("OSC server listening on port 7000")
+        except Exception as e:
+            logging.error(f"Error initializing OSC server: {e}")
+            raise
+
+        # Add a running flag
+        self.running = True
         
         # Track connected slaves
         self.slaves = {
@@ -164,16 +172,16 @@ class VideoOrchestrator:
         categories = list(set(v['category'] for v in self.videos))
         
         try:
-            while True:
+            while self.running:  # Use running flag instead of True
                 # Wait for slaves to connect
                 if not (self.slaves['hor'] and self.slaves['ver']):
-                    print("Waiting for slaves to connect...")
+                    logging.info("Waiting for slaves to connect...")
                     time.sleep(5)
                     continue
                 
                 # Play through categories
                 for category in categories:
-                    print(f"Playing category: {category}")
+                    logging.info(f"Playing category: {category}")
                     self.play_category(category)
                     # Wait for longest video duration in category
                     max_duration = max(
@@ -183,7 +191,11 @@ class VideoOrchestrator:
                     time.sleep(max_duration)
                     
         except KeyboardInterrupt:
-            print("Shutting down orchestrator...")
+            logging.info("Shutting down orchestrator...")
+            self.running = False
+        except Exception as e:
+            logging.error(f"Error in main loop: {e}", exc_info=True)
+            self.running = False
 
 def main():
     try:
