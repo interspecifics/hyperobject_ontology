@@ -5,6 +5,10 @@
 # Create log directory if it doesn't exist
 mkdir -p /home/pi/video_player/logs
 
+# Set up display environment
+export DISPLAY=:0
+export XAUTHORITY=/home/pi/.Xauthority
+
 # Activate virtual environment
 source /home/pi/video_player/venv/bin/activate
 

@@ -19,6 +19,13 @@ logging.basicConfig(
     ]
 )
 
+def get_slave_port(orientation, node):
+    """Get the correct port based on orientation and node number"""
+    if orientation == "hor":
+        return 8001 if node == 1 else 8002  # hor1: 8001, hor2: 8002
+    else:
+        return 8003 if node == 1 else 8004  # ver1: 8003, ver2: 8004
+
 class VideoOrchestrator:
     def __init__(self):
         logging.info("Initializing Video Orchestrator")
@@ -62,9 +69,11 @@ class VideoOrchestrator:
         
         if slave_id not in self.slaves[orientation]:
             self.slaves[orientation].append(slave_id)
-            # Create client for this slave using its ID to determine IP
+            # Create client for this slave using its ID to determine IP and port
             ip = f"192.168.1.{slave_id}"
-            port = 8001 if orientation == "hor" else 8002
+            # Determine if this is node 1 or 2 based on IP
+            node = 1 if slave_id in ['201', '203'] else 2
+            port = get_slave_port(orientation, node)
             self.slave_clients[slave_id] = OSCClient(ip, port)
             logging.info(f"Created client for slave at {ip}:{port}")
 

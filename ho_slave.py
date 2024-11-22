@@ -11,9 +11,21 @@ import argparse
 from queue import Queue
 from threading import Thread, Event
 
-# Load metadata
-with open('ontology_map.json', 'r') as f:
-    videos = json.load(f)
+def get_absolute_video_path(relative_path):
+    """Convert relative video path to absolute path"""
+    base_dir = '/home/pi/video_player'  # Base directory where the project is installed
+    return os.path.join(base_dir, relative_path)
+
+# Load metadata and convert paths to absolute
+try:
+    with open('/home/pi/video_player/ontology_map.json', 'r') as f:
+        videos = json.load(f)
+        # Convert all video paths to absolute paths
+        for video in videos:
+            video['path'] = get_absolute_video_path(video['path'])
+except Exception as e:
+    print(f"Error loading video metadata: {e}")
+    raise
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Video Player Slave Node')
@@ -32,8 +44,16 @@ def get_default_ip(orientation, node):
     else:  # vertical
         return f"192.168.1.{203 if node == 1 else 204}"  # 203 for ver1, 204 for ver2
 
+def get_slave_port(orientation, node):
+    """Get the correct port based on orientation and node number"""
+    if orientation == "hor":
+        return 8001 if node == 1 else 8002  # hor1: 8001, hor2: 8002
+    else:
+        return 8003 if node == 1 else 8004  # ver1: 8003, ver2: 8004
+
 class VideoPlayer:
     def __init__(self, orientation):
+        print("\n=== Video Player Initialization ===")
         self.orientation = orientation
         self.current_video = None
         self.player = None
@@ -47,6 +67,25 @@ class VideoPlayer:
             video['name']: video for video in videos 
             if video['orientation'].lower() == self.orientation
         }
+        
+        # Print available videos and their paths for debugging
+        print(f"\nFound {len(self.available_videos)} videos for {orientation} orientation:")
+        for name, video in self.available_videos.items():
+            print(f"\nVideo: {name}")
+            print(f"  Path: {video['path']}")
+            print(f"  Type: {video['video_type']}")
+            print(f"  FPS: {video.get('fps', 30)}")
+            print(f"  Duration: {video.get('duration', 'unknown')} seconds")
+            # Verify file exists
+            if os.path.exists(video['path']):
+                print(f"  Status: File exists")
+                # Get file size
+                size = os.path.getsize(video['path']) / (1024 * 1024)  # Convert to MB
+                print(f"  Size: {size:.2f} MB")
+            else:
+                print(f"  Status: FILE NOT FOUND")
+        
+        print("\n=== End Video Player Initialization ===\n")
         
         # Screen setup will be done in main thread
         self.screen = None
@@ -134,14 +173,18 @@ class VideoPlayer:
     def _start_video(self, video_name):
         """Start playing a video (internal method)"""
         if video_name not in self.available_videos:
-            print(f"Video not found: {video_name}")
+            print(f"\nERROR: Video not found in available videos: {video_name}")
+            print(f"Available videos are: {list(self.available_videos.keys())}")
             return
 
-        print(f"Starting video: {video_name}")
+        print(f"\n=== Starting Video Playback ===")
+        print(f"Video name: {video_name}")
+        
         # Clean up previous video before starting new one
         if self.player:
+            print("Stopping previous video...")
             self.stop_video()
-            # Clear frame queue
+            print("Clearing frame queue...")
             while not self.frame_queue.empty():
                 try:
                     self.frame_queue.get_nowait()
@@ -149,17 +192,33 @@ class VideoPlayer:
                     pass
             
         video = self.available_videos[video_name]
-        print(f"Starting playback of {video_name} from {video['path']}")
+        print(f"Video details:")
+        print(f"  Path: {video['path']}")
+        print(f"  Type: {video['video_type']}")
+        print(f"  FPS: {video.get('fps', 30)}")
         
-        self.current_video = video_name
-        self.stop_event.clear()
-        self.video_finished.clear()
-        self.player = MediaPlayer(video['path'])
-        
-        # Start frame fetching thread
-        fetch_thread = Thread(target=self._fetch_frames)
-        fetch_thread.daemon = True
-        fetch_thread.start()
+        try:
+            print("Creating MediaPlayer...")
+            self.current_video = video_name
+            self.stop_event.clear()
+            self.video_finished.clear()
+            self.player = MediaPlayer(video['path'])
+            print("MediaPlayer created successfully")
+            
+            # Start frame fetching thread
+            print("Starting frame fetch thread...")
+            fetch_thread = Thread(target=self._fetch_frames)
+            fetch_thread.daemon = True
+            fetch_thread.start()
+            print("Frame fetch thread started")
+            
+        except Exception as e:
+            print(f"ERROR starting video: {e}")
+            import traceback
+            traceback.print_exc()
+            return
+
+        print("=== Video Playback Started ===\n")
 
     def _fetch_frames(self):
         """Fetch frames in separate thread"""
@@ -198,10 +257,11 @@ class VideoPlayer:
         self.current_video = None
 
 class SlaveNode:
-    def __init__(self, orientation, ip_address):
+    def __init__(self, orientation, ip_address, node):
         print(f"Initializing slave node with orientation: {orientation} at IP: {ip_address}")
         self.slave_id = ip_address.split('.')[-1]  # Use last octet of IP as ID
         self.orientation = orientation
+        self.node = node
         self.osc_server = OSCThreadServer()
         
         # Initialize video player
@@ -211,14 +271,17 @@ class SlaveNode:
         # Initialize display in main thread
         self.video_player.initialize_display()
         
+        # Get the correct port for this slave
+        port = get_slave_port(orientation, node)
+        
         # Bind OSC server
         try:
             self.sock = self.osc_server.listen(
-                address='0.0.0.0',  # Listen on all interfaces instead of specific IP
-                port=8001 if orientation == "hor" else 8002,
+                address='0.0.0.0',
+                port=port,
                 default=True
             )
-            print(f"OSC server listening on port {8001 if orientation == 'hor' else 8002}")
+            print(f"OSC server listening on port {port}")
         except Exception as e:
             print(f"Error binding OSC server: {e}")
             raise
@@ -283,7 +346,7 @@ def main():
     
     try:
         # Initialize slave node
-        slave = SlaveNode(args.orientation, ip_address)
+        slave = SlaveNode(args.orientation, ip_address, args.node)
         print(f"Slave node initialized with orientation {args.orientation} and node {args.node}")
         
         # Run main loop (this will block)
