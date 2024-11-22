@@ -28,7 +28,6 @@ def get_slave_port(orientation, node):
 
 def get_absolute_video_path(relative_path):
     """Convert relative video path to absolute path"""
-    relative_path = relative_path.replace('Videos_hd_final', 'Videos_hd_finales')
     base_dir = '/home/pi/video_player'
     return os.path.join(base_dir, relative_path)
 
