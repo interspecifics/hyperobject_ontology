@@ -10,6 +10,8 @@ import time
 import argparse
 from queue import Queue
 from threading import Thread, Event
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 def get_absolute_video_path(relative_path):
     """Convert relative video path to absolute path"""
@@ -93,19 +95,19 @@ class VideoPlayer:
         
     def initialize_display(self):
         """Initialize pygame display (must be called from main thread)"""
-        os.environ['SDL_VIDEODRIVER'] = 'x11'  # Force X11 driver
+        # Simple pygame initialization
         pygame.init()
         
-        # Set up display based on orientation with no frame
+        # Set up display based on orientation
         if self.orientation == "hor":
             self.screen = pygame.display.set_mode(
                 (1280, 768), 
-                pygame.FULLSCREEN | pygame.NOFRAME | pygame.HWSURFACE | pygame.DOUBLEBUF
+                pygame.FULLSCREEN | pygame.NOFRAME
             )
         else:  # vertical
             self.screen = pygame.display.set_mode(
                 (768, 1280),
-                pygame.FULLSCREEN | pygame.NOFRAME | pygame.HWSURFACE | pygame.DOUBLEBUF
+                pygame.FULLSCREEN | pygame.NOFRAME
             )
             
         # Hide mouse cursor

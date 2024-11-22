@@ -9,10 +9,6 @@ sudo apt-get install -y \
     python3-venv \
     python3-pygame \
     ffmpeg \
-    libsdl2-dev \
-    libsdl2-image-dev \
-    libsdl2-mixer-dev \
-    libsdl2-ttf-dev \
     python3-full
 
 # Create project directories
@@ -36,8 +32,7 @@ source /home/pi/video_player/venv/bin/activate
 pip install --upgrade pip
 pip install \
     ffpyplayer \
-    oscpy \
-    python-osc
+    oscpy
 
 # Deactivate the virtual environment
 deactivate
