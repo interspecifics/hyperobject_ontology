@@ -270,6 +270,9 @@ class SlaveNode:
         # Initialize display in main thread
         self.video_player.initialize_display()
         
+        # Add video queue at class level
+        self.video_queue = Queue()
+        
         # Get the correct port for this slave
         port = get_slave_port(orientation, node)
         
@@ -313,7 +316,7 @@ class SlaveNode:
         """Handle incoming play command"""
         video_name = video_name.decode()
         print(f"Received play command for: {video_name}")
-        self.video_queue.put(video_name)  # Use queue instead of direct playback
+        self.video_player.play_video(video_name)
 
     def handle_stop(self):
         """Handle stop command"""

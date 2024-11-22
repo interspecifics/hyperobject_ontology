@@ -79,19 +79,24 @@ class VideoOrchestrator:
 
     def handle_slave_announce(self, slave_id, orientation):
         """Handle slave node announcements"""
-        slave_id = slave_id.decode()
-        orientation = orientation.decode()
-        logging.info(f"Slave announced: {slave_id} ({orientation})")
-        
-        if slave_id not in self.slaves[orientation]:
-            self.slaves[orientation].append(slave_id)
-            # Create client for this slave using its ID to determine IP and port
-            ip = f"192.168.1.{slave_id}"
-            # Determine if this is node 1 or 2 based on IP
-            node = 1 if slave_id in ['201', '203'] else 2
-            port = get_slave_port(orientation, node)
-            self.slave_clients[slave_id] = OSCClient(ip, port)
-            logging.info(f"Created client for slave at {ip}:{port}")
+        try:
+            slave_id = slave_id.decode()
+            orientation = orientation.decode()
+            logging.info(f"Slave announced: {slave_id} ({orientation})")
+            
+            if slave_id not in self.slaves[orientation]:
+                self.slaves[orientation].append(slave_id)
+                # Create client for this slave using its ID to determine IP and port
+                ip = f"192.168.1.{slave_id}"
+                # Determine if this is node 1 or 2 based on IP
+                node = 1 if slave_id in ['201', '203'] else 2
+                port = get_slave_port(orientation, node)
+                self.slave_clients[slave_id] = OSCClient(ip, port)
+                logging.info(f"Created client for slave at {ip}:{port}")
+                logging.info(f"Current slaves: hor={self.slaves['hor']}, ver={self.slaves['ver']}")
+        except Exception as e:
+            logging.error(f"Error in handle_slave_announce: {e}", exc_info=True)
+            raise
 
     def organize_videos_by_type(self, category, orientation):
         """Split videos into animated and text types for a given category and orientation"""
