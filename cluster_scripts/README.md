@@ -1,27 +1,23 @@
 # Video Player Cluster Setup Instructions
 
-This guide explains how to set up and run the synchronized video player cluster using 4 Raspberry Pi devices.
+This guide explains how to set up and run the offline video player cluster using 4 Raspberry Pi devices.
 
 ## System Architecture
 
 The system consists of:
-- 1 master node (which also runs a slave)
-- 3 additional slave nodes
-- 2 horizontal displays (1920x1080)
-- 2 vertical displays (768x1280 or 1080x1920)
+- 2 horizontal displays (1920x1080) running offline_slave.py with VLC
+- 2 vertical displays (768x1280 or 1080x1920) running offline_ffpy_slave.py with FFPyPlayer
 
 ### Network Configuration
 
-The cluster uses fixed IP addresses and ports:
+The cluster uses fixed IP addresses:
 
-| Node    | IP Address      | Port | Description                    |
-|---------|----------------|------|--------------------------------|
-| hor1    | 192.168.1.201  | 8001 | Horizontal display 1          |
-| hor2    | 192.168.1.202  | 8002 | Horizontal display 2          |
-| ver1    | 192.168.1.203  | 8003 | Vertical display 1           |
-| ver2    | 192.168.1.204  | 8004 | Vertical display 2           |
-
-The master node typically runs on the same device as either hor1 or ver1.
+| Node    | IP Address      | Description                    |
+|---------|----------------|--------------------------------|
+| hor1    | 192.168.1.201  | Horizontal display 1 (VLC)    |
+| hor2    | 192.168.1.202  | Horizontal display 2 (VLC)    |
+| ver1    | 192.168.1.203  | Vertical display 1 (FFPyPlayer)|
+| ver2    | 192.168.1.204  | Vertical display 2 (FFPyPlayer)|
 
 ## Installation
 
@@ -42,39 +38,38 @@ chmod +x /home/pi/video_player/cluster_scripts/*.sh
 
 ## Configuration
 
-Each device needs to be configured based on its role:
+Each device runs independently in offline mode:
 
-### Master + Slave Node (hor1)
+### Horizontal Nodes (VLC-based)
 ```bash
-# On 192.168.1.201
-python3 ho_master.py --local-slave hor1
-python3 ho_slave.py --orientation hor --node 1
+# On 192.168.1.201 (hor1)
+python3 offline_slave.py --device hor1
+
+# On 192.168.1.202 (hor2)
+python3 offline_slave.py --device hor2
 ```
 
-### Slave Nodes
+### Vertical Nodes (FFPyPlayer-based)
 ```bash
-# On 192.168.1.202 (hor2)
-python3 ho_slave.py --orientation hor --node 2
-
 # On 192.168.1.203 (ver1)
-python3 ho_slave.py --orientation ver --node 1
+python3 offline_ffpy_slave.py --device ver1
 
 # On 192.168.1.204 (ver2)
-python3 ho_slave.py --orientation ver --node 2
+python3 offline_ffpy_slave.py --device ver2
 ```
 
 ## Operation
 
-The system will:
+Each node will:
 1. Process categories in alphabetical order
-2. Play animated videos distributed across node pairs
-3. Insert text videos at intervals (never simultaneously)
-4. Maintain synchronization across all displays
+2. Play animated videos based on its node number (1 or 2)
+3. Insert text videos at intervals
+4. Maintain loose synchronization through deterministic shuffling
 
 ### Video Types
 - Animated videos are distributed between node pairs
-- Text videos are shown on one node while its pair waits
-- No two text videos play simultaneously across the system
+- Text videos are shown on one node while its pair shows animated content
+- Synchronization is maintained through consistent random seeds
 
 ## Testing
 

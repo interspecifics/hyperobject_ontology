@@ -58,6 +58,7 @@ venv.bak/
 *.wmv
 *.flv
 *.mkv
+*.wav
 
 # Jupyter Notebook
 .ipynb_checkpoints

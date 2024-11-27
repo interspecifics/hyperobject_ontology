@@ -5,7 +5,7 @@ from oscpy.client import OSCClient
 import random
 import subprocess
 import argparse
-from queue import Queue
+from queue import Queue, Empty
 from threading import Thread, Event
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
