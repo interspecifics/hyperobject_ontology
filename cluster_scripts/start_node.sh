@@ -39,14 +39,14 @@ case "$1" in
         sudo ip addr add $IP/24 dev eth0
         cd /home/pi/video_player
         log_message "Starting vertical1 node with FFPyPlayer"
-        python3 offline_ffpy_slave.py --device ver1 >> /home/pi/video_player/logs/vertical1.log 2>&1
+        python3 offline_slave.py --device ver1 >> /home/pi/video_player/logs/vertical1.log 2>&1
         ;;
     "ver2")
         IP="192.168.1.204"
         sudo ip addr add $IP/24 dev eth0
         cd /home/pi/video_player
         log_message "Starting vertical2 node with FFPyPlayer"
-        python3 offline_ffpy_slave.py --device ver2 >> /home/pi/video_player/logs/vertical2.log 2>&1
+        python3 offline_slave.py --device ver2 >> /home/pi/video_player/logs/vertical2.log 2>&1
         ;;
     *)
         echo "Usage: $0 [hor1|hor2|ver1|ver2]"

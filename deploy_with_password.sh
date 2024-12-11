@@ -5,6 +5,9 @@ VIDEO_PLAYER_DIR="/home/pi/video_player"
 SOURCE_DIR="."
 PASSWORD="1234"  # Replace with actual password
 
+# Add package directory
+PACKAGES_DIR="./packages"
+
 # Define host-to-type mappings as separate arrays
 HOSTS=(
     "master001.local"
@@ -25,22 +28,40 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# Check if sshpass is installed
-if ! command -v sshpass &> /dev/null; then
-    echo "sshpass is not installed. Installing via Homebrew..."
-    if ! command -v brew &> /dev/null; then
-        echo "Homebrew is not installed. Please install it first:"
-        echo "/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-        exit 1
+# Download packages if they don't exist
+download_packages() {
+    echo "Checking and downloading required packages..."
+    mkdir -p "${PACKAGES_DIR}"
+    
+    if [ ! -f "${PACKAGES_DIR}/unclutter.deb" ]; then
+        echo "Downloading unclutter package..."
+        # Using the Debian Bullseye repository for armhf architecture
+        wget -O "${PACKAGES_DIR}/unclutter.deb" \
+            "http://archive.raspberrypi.org/debian/pool/main/u/unclutter/unclutter_8-2+rpt1_armhf.deb"
     fi
-    brew install hudochenkov/sshpass/sshpass
-fi
+}
 
 # Function to deploy to a single host
 deploy_to_host() {
     local host=$1
     local node_type=$2
     echo -e "${GREEN}Deploying to ${host} as ${node_type}...${NC}"
+    
+    # Create packages directory on remote
+    sshpass -p "${PASSWORD}" ssh -o StrictHostKeyChecking=no "pi@${host}" "mkdir -p ${VIDEO_PLAYER_DIR}/packages"
+    
+    # Copy package files
+    echo "Copying package files..."
+    sshpass -p "${PASSWORD}" scp -r -o StrictHostKeyChecking=no \
+        "${PACKAGES_DIR}/unclutter.deb" \
+        "pi@${host}:${VIDEO_PLAYER_DIR}/packages/"
+    
+    # Install packages
+    echo "Installing packages..."
+    sshpass -p "${PASSWORD}" ssh -o StrictHostKeyChecking=no "pi@${host}" "
+        cd ${VIDEO_PLAYER_DIR}/packages && \
+        sudo dpkg -i unclutter.deb
+    "
     
     # Add to known_hosts if not already present (suppressing warnings)
     ssh-keygen -R "${host}" 2>/dev/null
@@ -53,29 +74,39 @@ deploy_to_host() {
     echo "Copying Python files..."
     sshpass -p "${PASSWORD}" scp -r -o StrictHostKeyChecking=no \
         "${SOURCE_DIR}/offline_slave.py" \
-        "${SOURCE_DIR}/offline_ffpy_slave.py" \
         "${SOURCE_DIR}/ontology_map.json" \
         "pi@${host}:${VIDEO_PLAYER_DIR}/"
     
-    # Create logs directory
-    echo "Creating logs directory..."
+    # Clear and recreate logs directory
+    echo "Clearing and recreating logs directory..."
     sshpass -p "${PASSWORD}" ssh -o StrictHostKeyChecking=no "pi@${host}" \
-        "mkdir -p ${VIDEO_PLAYER_DIR}/logs"
+        "rm -rf ${VIDEO_PLAYER_DIR}/logs && mkdir -p ${VIDEO_PLAYER_DIR}/logs"
     
-    # Determine which script to run based on node type
+    # Determine which script to run based on node type (currently overrriding)
     if [[ $node_type == hor* ]]; then
         STARTUP_CMD="python3 ${VIDEO_PLAYER_DIR}/offline_slave.py --device ${node_type}"
     else
-        STARTUP_CMD="python3 ${VIDEO_PLAYER_DIR}/offline_ffpy_slave.py --device ${node_type}"
-    fi
+        STARTUP_CMD="python3 ${VIDEO_PLAYER_DIR}/offline_slave.py --device ${node_type}"
     
-    # Create autostart entry
+    # Update autostart to include unclutter and video player
     sshpass -p "${PASSWORD}" ssh -o StrictHostKeyChecking=no "pi@${host}" "
         # Remove any existing autostart entries
         rm -f ~/.config/autostart/videoplayer.desktop
+        rm -f ~/.config/autostart/unclutter.desktop
         
         # Create fresh autostart directory
         mkdir -p ~/.config/autostart
+        
+        # Create unclutter autostart entry
+        cat > ~/.config/autostart/unclutter.desktop << EOF
+[Desktop Entry]
+Type=Application
+Name=Unclutter
+Exec=unclutter -idle 0
+Terminal=false
+Hidden=false
+X-GNOME-Autostart-enabled=true
+EOF
         
         # Create video player autostart entry
         cat > ~/.config/autostart/videoplayer.desktop << EOF
@@ -87,6 +118,8 @@ Terminal=true
 Hidden=false
 X-GNOME-Autostart-enabled=true
 EOF
+        
+        chmod +x ~/.config/autostart/unclutter.desktop
         chmod +x ~/.config/autostart/videoplayer.desktop
     "
     
@@ -96,6 +129,9 @@ EOF
         echo -e "${RED}Failed to deploy to ${host}${NC}"
     fi
 }
+
+# Main script execution
+download_packages
 
 # Main deployment loop
 for i in "${!HOSTS[@]}"; do

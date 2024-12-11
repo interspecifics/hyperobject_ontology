@@ -93,7 +93,7 @@ class VideoOntologyMapper:
         
         # Find orientation
         orientation = next((part.lower() for part in parts 
-                          if self.orientation_patterns.match(part)), None)
+                          if self.orientation_patterns.match(part)), None)[:3]
         
         # Get category (first folder that's not an orientation folder)
         category = next((part for part in parts 
@@ -159,6 +159,9 @@ class VideoOntologyMapper:
         Maps all valid video documentation and their relationships into the database.
         """
         for file_path in self.root_dir.rglob('*.mp4'):
+            # Skip if file doesn't contain 'hor' AND doesn't contain 'rotated'
+            if ('hor' not in str(file_path).lower()) and ('rotated' not in str(file_path).lower()):
+                continue
             video_data = self.process_video_file(file_path)
             if video_data:
                 self.database.append(video_data)
