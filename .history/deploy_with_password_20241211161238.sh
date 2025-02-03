@@ -47,21 +47,21 @@ deploy_to_host() {
     local node_type=$2
     echo -e "${GREEN}Deploying to ${host} as ${node_type}...${NC}"
     
-    # # Create packages directory on remote
-    # sshpass -p "${PASSWORD}" ssh -o StrictHostKeyChecking=no "pi@${host}" "mkdir -p ${VIDEO_PLAYER_DIR}/packages"
+    # Create packages directory on remote
+    sshpass -p "${PASSWORD}" ssh -o StrictHostKeyChecking=no "pi@${host}" "mkdir -p ${VIDEO_PLAYER_DIR}/packages"
     
-    # # Copy package files
-    # echo "Copying package files..."
-    # sshpass -p "${PASSWORD}" scp -r -o StrictHostKeyChecking=no \
-    #     "${PACKAGES_DIR}/unclutter.deb" \
-    #     "pi@${host}:${VIDEO_PLAYER_DIR}/packages/"
+    # Copy package files
+    echo "Copying package files..."
+    sshpass -p "${PASSWORD}" scp -r -o StrictHostKeyChecking=no \
+        "${PACKAGES_DIR}/unclutter.deb" \
+        "pi@${host}:${VIDEO_PLAYER_DIR}/packages/"
     
-    # # Install packages
-    # echo "Installing packages..."
-    # sshpass -p "${PASSWORD}" ssh -o StrictHostKeyChecking=no "pi@${host}" "
-    #     cd ${VIDEO_PLAYER_DIR}/packages && \
-    #     sudo dpkg -i unclutter.deb
-    # "
+    # Install packages
+    echo "Installing packages..."
+    sshpass -p "${PASSWORD}" ssh -o StrictHostKeyChecking=no "pi@${host}" "
+        cd ${VIDEO_PLAYER_DIR}/packages && \
+        sudo dpkg -i unclutter.deb
+    "
     
     # Add to known_hosts if not already present (suppressing warnings)
     ssh-keygen -R "${host}" 2>/dev/null
